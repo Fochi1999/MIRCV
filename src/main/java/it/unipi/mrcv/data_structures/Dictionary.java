@@ -20,5 +20,11 @@ public class Dictionary {
         return  dictionary.get(term);
     }
 
+    public long size() {
+        //TODO: DA FARE
+        return dictionary.size();
+
+    }
+
     // TODO: save to file
 }
