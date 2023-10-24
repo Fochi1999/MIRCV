@@ -20,8 +20,8 @@ public class DictionaryElem {
 
     public DictionaryElem(String term){
         this.term = term;
-        this.df = 0;
-        this.cf = 0;
+        this.df = 1;
+        this.cf = 1;
         this.offsetDoc = 0;
         this.offsetFreq = 0;
         this.length = 0;

@@ -1,13 +1,13 @@
 package it.unipi.mrcv.data_structures;
 
-import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Dictionary {
-    private HashMap<String, DictionaryElem> dictionary;
+    private TreeMap<String, DictionaryElem> dictionary;
 
     // default constructor
     public Dictionary(){
-        dictionary = new HashMap<>();
+        dictionary = new TreeMap<>();
     };
 
     // insert element in the dictionary
