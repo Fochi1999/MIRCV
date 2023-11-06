@@ -5,6 +5,7 @@ import it.unipi.mrcv.data_structures.Dictionary;
 import it.unipi.mrcv.preprocess.preprocess;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -148,5 +149,78 @@ public class SPIMI {
             line= reader.readLine();
         }
     }
+
+    // function that reads the docIds file OR the freqs file and prints them
+    public static void readIndex(String path) {
+        try (FileInputStream fis = new FileInputStream(path);
+             FileChannel fileChannel = fis.getChannel()) {
+
+            ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+
+            while (fileChannel.read(buffer) != -1) {
+                buffer.flip(); // Prepare the buffer for reading
+
+                if (buffer.remaining() >= Integer.BYTES) {
+                    int frequency = buffer.getInt();
+                    System.out.println(frequency); // Print the integer
+                } else {
+                    // Not enough bytes for a full integer, handle partial read or end of file
+                    System.err.println("Partial read or end of file reached. Exiting.");
+                    break;
+                }
+
+                buffer.clear(); // Clear the buffer for the next read
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void readDictionary(String path) {
+        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
+                StandardOpenOption.READ)) {
+
+            // Assuming a fixed size for each term (e.g., 40 chars as in your code)
+            // and fixed sizes for the other integers and longs (4 bytes for int, 8 bytes for long)
+            ByteBuffer buffer = ByteBuffer.allocate(40 + 4 + 4 + 8 + 8 + 4);
+
+            while (vocFchan.read(buffer) != -1) {
+                buffer.flip(); // Prepare the buffer for reading
+
+                if (buffer.remaining() >= 40 + 4 + 4 + 8 + 8 + 4) {
+                    // Read term
+                    byte[] termBytes = new byte[40];
+                    buffer.get(termBytes);
+                    String term = new String(termBytes, StandardCharsets.UTF_8).trim();
+
+                    // Read statistics
+                    int df = buffer.getInt();
+                    int cf = buffer.getInt();
+                    long offsetDoc = buffer.getLong();
+                    long offsetFreq = buffer.getLong();
+                    int length = buffer.getInt();
+
+                    // Print the details
+                    System.out.println("Term: " + term);
+                    System.out.println("Document Frequency (df): " + df);
+                    System.out.println("Collection Frequency (cf): " + cf);
+                    System.out.println("Offset Doc: " + offsetDoc);
+                    System.out.println("Offset Freq: " + offsetFreq);
+                    System.out.println("Length: " + length);
+                    System.out.println("-------------------------");
+                } else {
+                    // Not enough data for a full dictionary entry, handle partial read or end of file
+                    System.err.println("Partial read or end of file reached. Exiting.");
+                    break;
+                }
+
+                buffer.clear(); // Clear the buffer for the next read
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
 
