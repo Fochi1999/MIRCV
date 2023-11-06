@@ -147,7 +147,9 @@ public class SPIMI {
                 postingLists=new TreeMap<>();
                 Thread.sleep(1000);
             }
+
             line= reader.readLine();
         }
     }
 }
+
