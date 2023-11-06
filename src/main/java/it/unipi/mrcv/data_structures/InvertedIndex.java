@@ -32,7 +32,9 @@ public class InvertedIndex {
         return new ArrayList<>(index.keySet());
     }
 
-
+    public TreeMap<String, PostingList> getTree(){
+        return index;
+    }
     public void writeToFile(String filename) {
         // You can implement the file writing logic here
         // Open the file, iterate through the index, and write it to the file

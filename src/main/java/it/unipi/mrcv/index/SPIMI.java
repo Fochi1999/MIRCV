@@ -1,9 +1,7 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
-import it.unipi.mrcv.data_structures.DictionaryElem;
-import it.unipi.mrcv.data_structures.Posting;
-import it.unipi.mrcv.data_structures.PostingList;
 import it.unipi.mrcv.preprocess.preprocess;
 
 import java.io.*;
@@ -20,7 +18,7 @@ public class SPIMI {
     public static int counterBlock=0;
     public static Dictionary dictionary= new Dictionary();
     /* Posting list of a term in memory */
-    public static TreeMap<String, PostingList> postingLists = new TreeMap<>();
+    public static InvertedIndex postingLists = new InvertedIndex();
     //TODO: informazioni riguardo il documento
 
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
@@ -41,20 +39,13 @@ public class SPIMI {
                 DictionaryElem entryDictionary=dictionary.getElem(term);
                 if(entryDictionary==null){
                     dictionary.insertElem(new DictionaryElem(term));
-<<<<<<< Updated upstream
-                    PostingList List=new PostingList();
-                    List.addPosting(new Posting(docId,1));
+                    postingLists.addPosting(term,new Posting(docId,1));
                     numPosting++;
-                    postingLists.put(term,List);
-=======
-                    PostingList list=new PostingList();
-                    list.addPosting(new Posting(docId,1));
-                    postingLists.put(term,list);
->>>>>>> Stashed changes
+
                 }
                 else{
                     entryDictionary.setCf(entryDictionary.getCf()+1);
-                    PostingList list=postingLists.get(term);
+                    PostingList list=postingLists.getPostings(term);
                     List<Posting> Postings=list.getPostings();
                     Posting lastPosting=Postings.get(Postings.size()-1);
                     if(lastPosting.getDocid()==docId){
@@ -72,7 +63,7 @@ public class SPIMI {
                 //System.out.println("Postinglist:"+postingLists.toString());
                 //Thread.sleep(1);
                 //System.out.println("Memory usage: "+Runtime.getRuntime().totalMemory()+"/"+MaxUsableMemory);
-                //TODO: Usare inverted index al posto di hashmap
+                //TODO: Usare inverted index al posto di TreeMap
 
 
 
@@ -119,7 +110,7 @@ public class SPIMI {
                     long vocOffset = 0;
                     // check if MappedByteBuffers are correctly instantiated
                     for (Map.Entry<String, PostingList>
-                            entry : postingLists.entrySet()){
+                            entry : postingLists.getTree().entrySet()){
                         DictionaryElem dictionaryElem=dictionary.getElem(entry.getKey());
                         dictionaryElem.setOffsetDoc(docsBuffer.position());
                         dictionaryElem.setOffsetFreq(freqsBuffer.position());
@@ -150,7 +141,7 @@ public class SPIMI {
                 }
                 counterBlock++;
                 dictionary=new Dictionary();
-                postingLists=new TreeMap<>();
+                postingLists=new InvertedIndex();
                 Thread.sleep(1000);
             }
 
