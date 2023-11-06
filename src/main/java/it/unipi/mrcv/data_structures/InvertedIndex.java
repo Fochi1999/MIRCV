@@ -1,16 +1,15 @@
 package it.unipi.mrcv.data_structures;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.List;
-import java.util.Map;
 
 public class InvertedIndex {
 
-    private Map<String, PostingList> index;
+    private TreeMap<String, PostingList> index;
 
     public InvertedIndex() {
-        index = new HashMap<>();
+        index = new TreeMap<>();
     }
 
     public void addPosting(String term, Posting posting) {

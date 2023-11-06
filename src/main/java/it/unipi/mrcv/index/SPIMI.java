@@ -25,8 +25,8 @@ public class SPIMI {
 
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
         //TODO: per un tot di memoria leggere x file
-        /* Setting the total used memory to 50% */
-        long MaxUsableMemory = Runtime.getRuntime().maxMemory() * 15 / 100;
+        /* Setting the total used memory to 80% */
+        long MaxUsableMemory = Runtime.getRuntime().maxMemory() * 80 / 100;
         int docId=0;
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
         String line = reader.readLine();
@@ -41,15 +41,21 @@ public class SPIMI {
                 DictionaryElem entryDictionary=dictionary.getElem(term);
                 if(entryDictionary==null){
                     dictionary.insertElem(new DictionaryElem(term));
+<<<<<<< Updated upstream
                     PostingList List=new PostingList();
                     List.addPosting(new Posting(docId,1));
                     numPosting++;
                     postingLists.put(term,List);
+=======
+                    PostingList list=new PostingList();
+                    list.addPosting(new Posting(docId,1));
+                    postingLists.put(term,list);
+>>>>>>> Stashed changes
                 }
                 else{
                     entryDictionary.setCf(entryDictionary.getCf()+1);
-                    PostingList List=postingLists.get(term);
-                    List<Posting> Postings=List.getPostings();
+                    PostingList list=postingLists.get(term);
+                    List<Posting> Postings=list.getPostings();
                     Posting lastPosting=Postings.get(Postings.size()-1);
                     if(lastPosting.getDocid()==docId){
                         lastPosting.setFrequency(lastPosting.getFrequency()+1);
