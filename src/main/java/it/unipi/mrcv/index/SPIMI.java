@@ -77,6 +77,7 @@ public class SPIMI {
 
             line = reader.readLine();
         }
+        writeToDisk();
     }
 
     private static void writeToDisk() throws IOException, InterruptedException {
@@ -103,7 +104,7 @@ public class SPIMI {
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             //TODO: allocare la memoria giusta per il vocabulary
             System.out.println(dictionary.size());
-            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size() + (3 * dictionary.length()));
+            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
             long vocOffset = 0;
             // check if MappedByteBuffers are correctly instantiated
             for (Map.Entry<String, PostingList>
@@ -122,7 +123,7 @@ public class SPIMI {
                 CharBuffer charBuffer = CharBuffer.allocate(40); //TODO: verificare la size
                 String term = dictionaryElem.getTerm();
                 //populate char buffer char by char
-                for (int i = 0; i < term.length() && i < 40; i++)
+                for (int i = 0; i < term.length(); i++)
                     charBuffer.put(i, term.charAt(i));
 
                 // Write the term into file
