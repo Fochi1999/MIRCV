@@ -25,5 +25,10 @@ public class Dictionary {
 
     }
 
+    public long length() {
+        return dictionary.size();
+
+    }
+
     // TODO: save to file
 }
