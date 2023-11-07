@@ -21,8 +21,7 @@ public class Dictionary {
     }
 
     public long size() {
-        //TODO: DA FARE
-        return dictionary.size();
+        return dictionary.size()*DictionaryElem.size();
 
     }
 

@@ -73,4 +73,8 @@ public class DictionaryElem {
         return this.length;
     };
 
+    public static int size(){
+        return 68; //size of everything in the class
+    }
+
 }

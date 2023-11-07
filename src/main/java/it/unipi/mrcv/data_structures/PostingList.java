@@ -18,5 +18,9 @@ public class PostingList {
         return postings;
     }
 
+    public int size() {
+        return postings.size();
+    }
+
     // You can add more methods as needed for manipulating the posting list
 }
