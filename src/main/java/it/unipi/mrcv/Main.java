@@ -27,9 +27,17 @@ import static it.unipi.mrcv.index.SPIMI.postingLists;
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        SPIMI.exeSPIMI("sample.txt");
-        SPIMI.readDictionary("voc_0");
 
+        long startTime = System.nanoTime();
+
+        // SPIMI.exeSPIMI("collection.tsv");
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1_000_000; // Convert from nanoseconds to milliseconds
+
+        System.out.println("Elapsed time in milliseconds: " + duration);
+
+        SPIMI.readIndex("doc_0");
 
 
     }

@@ -104,7 +104,7 @@ public class SPIMI {
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             //TODO: allocare la memoria giusta per il vocabulary
             System.out.println(dictionary.size());
-            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
+            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size() + (3* dictionary.length()));
             long vocOffset = 0;
             // check if MappedByteBuffers are correctly instantiated
             for (Map.Entry<String, PostingList>
@@ -123,11 +123,23 @@ public class SPIMI {
                 CharBuffer charBuffer = CharBuffer.allocate(40); //TODO: verificare la size
                 String term = dictionaryElem.getTerm();
                 //populate char buffer char by char
-                for (int i = 0; i < term.length(); i++)
+                for (int i = 0; i < term.length() && i < 40; i++)
                     charBuffer.put(i, term.charAt(i));
 
                 // Write the term into file
-                vocBuffer.put(StandardCharsets.UTF_8.encode(charBuffer));
+                ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
+                ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
+                // Ensure the buffer is at the start before reading from it
+                encodedBuffer.rewind();
+
+                // Transfer bytes to the new buffer
+                for (int i = 0; i < 40; i++) {
+                    truncatedBuffer.put(encodedBuffer.get(i));
+                }
+
+                int lengthInBytes = truncatedBuffer.limit();
+                // System.out.println(lengthInBytes);
+                vocBuffer.put(truncatedBuffer);
 
                 // write statistics
                 vocBuffer.putInt(dictionaryElem.getDf());
@@ -138,11 +150,14 @@ public class SPIMI {
             }
         }
         counterBlock++;
+        postingLists.clear();
+        dictionary.clear();
         dictionary = new Dictionary();
         postingLists = new InvertedIndex();
         numPosting = 0;
         System.gc();
-        Thread.sleep(1000);
+        Thread.sleep(1500);
+
     }
 
     // function that reads the docIds file OR the freqs file and prints them

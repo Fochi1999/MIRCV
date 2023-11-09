@@ -41,4 +41,8 @@ public class InvertedIndex {
         // You may want to use try-with-resources to handle file I/O
     }
 
+    // method to clear the index
+    public void clear() {
+        index.clear();
+    }
 }

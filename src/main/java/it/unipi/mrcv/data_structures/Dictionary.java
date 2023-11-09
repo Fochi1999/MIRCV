@@ -30,5 +30,10 @@ public class Dictionary {
 
     }
 
+    // method to clear the dictionary
+    public void clear() {
+        dictionary.clear();
+    }
+
     // TODO: save to file
 }
