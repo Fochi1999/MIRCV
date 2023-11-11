@@ -104,7 +104,7 @@ public class SPIMI {
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             //TODO: allocare la memoria giusta per il vocabulary
             System.out.println(dictionary.size());
-            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size() + (3* dictionary.length()));
+            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
             long vocOffset = 0;
             // check if MappedByteBuffers are correctly instantiated
             for (Map.Entry<String, PostingList>
@@ -157,6 +157,8 @@ public class SPIMI {
                 vocBuffer.putLong(dictionaryElem.getOffsetDoc());
                 vocBuffer.putLong(dictionaryElem.getOffsetFreq());
                 vocBuffer.putInt(dictionaryElem.getLength());
+                System.out.println(term);
+
             }
         }
         counterBlock++;
