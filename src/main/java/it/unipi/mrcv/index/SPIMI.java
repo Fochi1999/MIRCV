@@ -128,9 +128,18 @@ public class SPIMI {
 
                 // Write the term into file
                 ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
+                // Encode the CharBuffer into a ByteBuffer
                 ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
                 // Ensure the buffer is at the start before reading from it
                 encodedBuffer.rewind();
+
+
+/*                // Create a byte array of the same size as the ByteBuffer's content
+                byte[] bytes = new byte[encodedBuffer.remaining()];
+                // Transfer bytes from the ByteBuffer to the byte array
+                encodedBuffer.get(bytes);
+                String termz = decodeTerm(bytes);
+                System.out.println(termz);*/
 
                 // Transfer bytes to the new buffer
                 for (int i = 0; i < 40; i++) {
@@ -138,6 +147,7 @@ public class SPIMI {
                 }
 
                 int lengthInBytes = truncatedBuffer.limit();
+                truncatedBuffer.rewind();
                 // System.out.println(lengthInBytes);
                 vocBuffer.put(truncatedBuffer);
 
@@ -187,7 +197,7 @@ public class SPIMI {
     }
 
 
-    public static void readDictionary(String path) {
+    /*public static void readDictionary(String path) {
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
 
@@ -230,7 +240,68 @@ public class SPIMI {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }*/
+
+    public static void readDictionary(String path) {
+        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
+                StandardOpenOption.READ)) {
+
+            // Size for each term in bytes
+            int termSize = 40;
+            // Sizes for the other integers and longs
+            int intSize = Integer.BYTES; // 4 bytes
+            int longSize = Long.BYTES;   // 8 bytes
+            // Total size of one dictionary entry
+            int entrySize = termSize + 2 * intSize + 2 * longSize + intSize;
+
+            ByteBuffer buffer = ByteBuffer.allocate(entrySize);
+
+            while (vocFchan.read(buffer) != -1) {
+                buffer.flip(); // Prepare the buffer for reading
+
+                if (buffer.remaining() >= entrySize) {
+                    // Read term
+                    byte[] termBytes = new byte[termSize];
+                    buffer.get(termBytes);
+                    String term = decodeTerm(termBytes);
+
+                    // Read statistics
+                    int df = buffer.getInt();
+                    int cf = buffer.getInt();
+                    long offsetDoc = buffer.getLong();
+                    long offsetFreq = buffer.getLong();
+                    int length = buffer.getInt();
+
+                    // Print the details
+                    System.out.println("Term: " + term);
+                    System.out.println("Document Frequency (df): " + df);
+                    System.out.println("Collection Frequency (cf): " + cf);
+                    System.out.println("Offset Doc: " + offsetDoc);
+                    System.out.println("Offset Freq: " + offsetFreq);
+                    System.out.println("Length: " + length);
+                    System.out.println("-------------------------");
+                } else {
+                    // Not enough data for a full dictionary entry, handle partial read or end of file
+                    System.err.println("Partial read or end of file reached. Exiting.");
+                    break;
+                }
+
+                buffer.clear(); // Clear the buffer for the next read
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
+    private static String decodeTerm(byte[] termBytes) {
+        // Create a ByteBuffer from the byte array
+        ByteBuffer termBuffer = ByteBuffer.wrap(termBytes);
+        // Decode the ByteBuffer into a CharBuffer
+        CharBuffer charBuffer = StandardCharsets.UTF_8.decode(termBuffer);
+        // Convert CharBuffer to String
+        return charBuffer.toString().trim(); // Trim the string in case there are any zero padding bytes
+    }
+
 
 }
 
