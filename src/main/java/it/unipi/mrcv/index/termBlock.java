@@ -27,4 +27,7 @@ public class termBlock{
     public int getNumBlock(){
         return this.numBlock;
     }
+    public DictionaryElem getDictionaryElem(){
+        return this.term;
+    }
 }
