@@ -36,11 +36,11 @@ public class DictionaryElem {
         this.cf = cf;
     };
 
-    public void setOffsetDoc(int offsetDoc){
+    public void setOffsetDoc(long offsetDoc){
         this.offsetDoc = offsetDoc;
     };
 
-    public void setOffsetFreq(int offsetFreq){
+    public void setOffsetFreq(long offsetFreq){
         this.offsetFreq = offsetFreq;
     };
 

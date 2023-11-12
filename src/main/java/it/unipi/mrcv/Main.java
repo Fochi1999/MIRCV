@@ -17,6 +17,8 @@ import java.util.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import it.unipi.mrcv.index.Merger;
 import it.unipi.mrcv.index.SPIMI;
 
 import static it.unipi.mrcv.index.SPIMI.dictionary;
@@ -30,14 +32,19 @@ public class Main {
 
         long startTime = System.nanoTime();
 
-        // SPIMI.exeSPIMI("collection.tsv");
+        SPIMI.exeSPIMI("reduced collection.tsv");
 
         long endTime = System.nanoTime();
         long duration = (endTime - startTime) / 1_000_000; // Convert from nanoseconds to milliseconds
 
         System.out.println("Elapsed time in milliseconds: " + duration);
 
-        SPIMI.readIndex("doc_0");
+        //SPIMI.readIndex("doc_0");
+        SPIMI.readDictionary("voc_0");
+       /* RandomAccessFile p=new RandomAccessFile("voc_0","r");
+        p.seek(68*800); //set the pointer to 0
+        Merger.readLineFromDictionary(p,0);*/
+        //System.out.println(SPIMI.debugCounter);
 
 
     }

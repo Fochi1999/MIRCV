@@ -17,6 +17,7 @@ public class preprocess {
         text=removePuntuaction(text);
         text=lowercase(text);
         text=text.replaceAll("\\s+", " "); //remove extra whitespaces
+
         text=removeUnicode(text);
         //if flag allora tokenStem else tokeniza e basta
         //return stem(text);

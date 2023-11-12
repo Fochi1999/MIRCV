@@ -23,7 +23,7 @@ public class SPIMI {
     /* Posting list of a term in memory */
     public static InvertedIndex postingLists = new InvertedIndex();
     //TODO: informazioni riguardo il documento
-
+    public static int debugCounter=0; //TODO ELIMINARE
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
         //TODO: per un tot di memoria leggere x file
         /* Setting the total used memory to 80% */
@@ -36,9 +36,10 @@ public class SPIMI {
 
             docId = docId + 1;
             List<String> tokens = preprocess.all(line);
-            //System.out.println(tokens);
-            //Thread.sleep(1000);
             for (String term : tokens) {
+                if(term.length()==0){
+                    continue;
+                }
                 DictionaryElem entryDictionary = dictionary.getElem(term);
                 if (entryDictionary == null) {
                     dictionary.insertElem(new DictionaryElem(term));
@@ -59,12 +60,8 @@ public class SPIMI {
                     }
                 }
 
-                //System.out.println("Processato il termine "+term+" con docId:"+docId+". Memory usage: "+Runtime.getRuntime().totalMemory()+"/"+MaxUsableMemory);
-                //System.out.println("dictionary:"+dictionary.toString());
-                //System.out.println("Postinglist:"+postingLists.toString());
-                //Thread.sleep(1);
-                //System.out.println("Memory usage: "+Runtime.getRuntime().totalMemory()+"/"+MaxUsableMemory);
-                //TODO: Usare inverted index al posto di TreeMap
+
+
 
 
             }
@@ -103,12 +100,13 @@ public class SPIMI {
             // instantiation of MappedByteBuffer for integer list of freqs
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             //TODO: allocare la memoria giusta per il vocabulary
-            System.out.println(dictionary.size());
+
             MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
             long vocOffset = 0;
             // check if MappedByteBuffers are correctly instantiated
             for (Map.Entry<String, PostingList>
                     entry : postingLists.getTree().entrySet()) {
+
                 DictionaryElem dictionaryElem = dictionary.getElem(entry.getKey());
                 dictionaryElem.setOffsetDoc(docsBuffer.position());
                 dictionaryElem.setOffsetFreq(freqsBuffer.position());
@@ -132,15 +130,6 @@ public class SPIMI {
                 ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
                 // Ensure the buffer is at the start before reading from it
                 encodedBuffer.rewind();
-
-
-/*                // Create a byte array of the same size as the ByteBuffer's content
-                byte[] bytes = new byte[encodedBuffer.remaining()];
-                // Transfer bytes from the ByteBuffer to the byte array
-                encodedBuffer.get(bytes);
-                String termz = decodeTerm(bytes);
-                System.out.println(termz);*/
-
                 // Transfer bytes to the new buffer
                 for (int i = 0; i < 40; i++) {
                     truncatedBuffer.put(encodedBuffer.get(i));
@@ -148,7 +137,6 @@ public class SPIMI {
 
                 int lengthInBytes = truncatedBuffer.limit();
                 truncatedBuffer.rewind();
-                // System.out.println(lengthInBytes);
                 vocBuffer.put(truncatedBuffer);
 
                 // write statistics
@@ -157,7 +145,6 @@ public class SPIMI {
                 vocBuffer.putLong(dictionaryElem.getOffsetDoc());
                 vocBuffer.putLong(dictionaryElem.getOffsetFreq());
                 vocBuffer.putInt(dictionaryElem.getLength());
-                System.out.println(term);
 
             }
         }
@@ -199,50 +186,6 @@ public class SPIMI {
     }
 
 
-    /*public static void readDictionary(String path) {
-        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
-                StandardOpenOption.READ)) {
-
-            // Assuming a fixed size for each term (e.g., 40 chars as in your code)
-            // and fixed sizes for the other integers and longs (4 bytes for int, 8 bytes for long)
-            ByteBuffer buffer = ByteBuffer.allocate(40 + 4 + 4 + 8 + 8 + 4);
-
-            while (vocFchan.read(buffer) != -1) {
-                buffer.flip(); // Prepare the buffer for reading
-
-                if (buffer.remaining() >= 40 + 4 + 4 + 8 + 8 + 4) {
-                    // Read term
-                    byte[] termBytes = new byte[40];
-                    buffer.get(termBytes);
-                    String term = new String(termBytes, StandardCharsets.UTF_8).trim();
-
-                    // Read statistics
-                    int df = buffer.getInt();
-                    int cf = buffer.getInt();
-                    long offsetDoc = buffer.getLong();
-                    long offsetFreq = buffer.getLong();
-                    int length = buffer.getInt();
-
-                    // Print the details
-                    System.out.println("Term: " + term);
-                    System.out.println("Document Frequency (df): " + df);
-                    System.out.println("Collection Frequency (cf): " + cf);
-                    System.out.println("Offset Doc: " + offsetDoc);
-                    System.out.println("Offset Freq: " + offsetFreq);
-                    System.out.println("Length: " + length);
-                    System.out.println("-------------------------");
-                } else {
-                    // Not enough data for a full dictionary entry, handle partial read or end of file
-                    System.err.println("Partial read or end of file reached. Exiting.");
-                    break;
-                }
-
-                buffer.clear(); // Clear the buffer for the next read
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }*/
 
     public static void readDictionary(String path) {
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
@@ -295,7 +238,7 @@ public class SPIMI {
         }
     }
 
-    private static String decodeTerm(byte[] termBytes) {
+    public static String decodeTerm(byte[] termBytes) {
         // Create a ByteBuffer from the byte array
         ByteBuffer termBuffer = ByteBuffer.wrap(termBytes);
         // Decode the ByteBuffer into a CharBuffer
