@@ -20,11 +20,25 @@ import java.util.PriorityQueue;
 public class Merger {
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
-    public static int num_blocks = SPIMI.counterBlock;
+    public static int num_blocks = 8;
+    // public static int num_blocks = SPIMI.counterBlock;
 
 
     public static void Merge() throws IOException {
-        List<RandomAccessFile> pointers = new ArrayList<>();
+        DictionaryElem temporaryElem;
+        long docOff = 0;
+        long freqOff = 0;
+        long prevDocOff = 0;
+        long prevFreqOff = 0;
+        long termNumber = 0;
+        RandomAccessFile docPointer;
+        RandomAccessFile frePointer;
+        MappedByteBuffer docsBuffer;
+        MappedByteBuffer freqsBuffer;
+        MappedByteBuffer vocBuffer;
+        List<RandomAccessFile> docPointers = new ArrayList<>();
+        List<RandomAccessFile> freqPointers = new ArrayList<>();
+        List<RandomAccessFile> vocPointers = new ArrayList<>();
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
 
         //inizializzazione
@@ -33,7 +47,14 @@ public class Merger {
             try {
                 RandomAccessFile p = new RandomAccessFile("voc_" + i, "r");
                 p.seek(0); //set the pointer to 0
-                pointers.add(p);
+                vocPointers.add(p);
+                RandomAccessFile d = new RandomAccessFile("doc_" + i, "r");
+                p.seek(0); //set the pointer to 0
+                docPointers.add(d);
+                RandomAccessFile q = new RandomAccessFile("freq_" + i, "r");
+                p.seek(0); //set the pointer to 0
+                freqPointers.add(q);
+
 
                 pQueue.add(readLineFromDictionary(p, i));
 
@@ -61,24 +82,13 @@ public class Merger {
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)) {
             while(!pQueue.isEmpty()) {
-                DictionaryElem temporaryElem;
-                long docOff = 0;
-                long freqOff = 0;
-                long prevDocOff = 0;
-                long prevFreqOff = 0;
-                long termNumber = 0;
-                RandomAccessFile docPointer;
-                RandomAccessFile frePointer;
-                MappedByteBuffer docsBuffer;
-                MappedByteBuffer freqsBuffer;
-                MappedByteBuffer vocBuffer;
                 List<Integer> temporaryDocIds = new ArrayList<>();
                 List<Integer> temporaryFreqs = new ArrayList<>();
                 List<termBlock> termBlockList = new ArrayList<>();
 
                 termBlockList.add(pQueue.poll());
                 String term = termBlockList.get(0).getTerm();
-                while (term.equals(pQueue.peek().getTerm())) {
+                while (!pQueue.isEmpty() && term.equals(pQueue.peek().getTerm())) {
                     termBlockList.add(pQueue.poll());
                 }
 
@@ -93,21 +103,19 @@ public class Merger {
                 prevDocOff=docOff;
                 for (termBlock tb : termBlockList) {
                     int blockNumber = tb.getNumBlock();
-                    docPointer = new RandomAccessFile("doc_" + blockNumber, "r");
-                    frePointer = new RandomAccessFile("freq_" + blockNumber, "r");
                     temporaryElem.setDf(temporaryElem.getDf() + tb.getDictionaryElem().getDf());
                     temporaryElem.setCf(temporaryElem.getCf() + tb.getDictionaryElem().getCf());
                     temporaryElem.setLength(temporaryElem.getLength() + tb.getDictionaryElem().getLength());
-                    temporaryDocIds.addAll(readLineFromDocId(docPointer, tb.getDictionaryElem().getLength()));
-                    temporaryFreqs.addAll(readLineFromFreq(frePointer, tb.getDictionaryElem().getLength()));
+                    temporaryDocIds.addAll(readLineFromDocId(docPointers.get(blockNumber), tb.getDictionaryElem().getLength()));
+                    temporaryFreqs.addAll(readLineFromFreq(freqPointers.get(blockNumber), tb.getDictionaryElem().getLength()));
                     //scrittura su file
 
                     docOff += tb.getDictionaryElem().getLength() * 4;
                     freqOff += tb.getDictionaryElem().getLength() * 4;
-                    if (isEndOfFile(pointers.get(blockNumber))) {
+                    if (isEndOfFile(vocPointers.get(blockNumber))) {
                         continue;
                     }
-                    pQueue.add(readLineFromDictionary(pointers.get(blockNumber), blockNumber));
+                    pQueue.add(readLineFromDictionary(vocPointers.get(blockNumber), blockNumber));
 
                 }
                 //write temporaryElem in DefiniteDictionary
@@ -178,15 +186,15 @@ public class Merger {
         int int3 = raf.readInt();
 
         // For demonstration purposes: print out the values
-        System.out.println("ByteBuffer contents: " + SPIMI.decodeTerm(termBytes));
+/*        System.out.println("ByteBuffer contents: " + SPIMI.decodeTerm(termBytes));
         System.out.println("First int: " + int1);
         System.out.println("Second int: " + int2);
         System.out.println("First long: " + long1);
         System.out.println("Second long: " + long2);
-        System.out.println("Third int: " + int3);
+        System.out.println("Third int: " + int3);*/
 
 
-        return new termBlock(SPIMI.decodeTerm(termBytes), n);
+        return new termBlock(SPIMI.decodeTerm(termBytes), int1, int2, long1, long2, int3, n);
     }
 
     public static List<Integer> readLineFromDocId(RandomAccessFile raf, int length) throws IOException {

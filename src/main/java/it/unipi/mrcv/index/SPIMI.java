@@ -135,7 +135,6 @@ public class SPIMI {
                     truncatedBuffer.put(encodedBuffer.get(i));
                 }
 
-                int lengthInBytes = truncatedBuffer.limit();
                 truncatedBuffer.rewind();
                 vocBuffer.put(truncatedBuffer);
 
