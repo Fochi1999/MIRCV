@@ -19,7 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import it.unipi.mrcv.index.Merger;
+import it.unipi.mrcv.index.MergerThreadTry;
 import it.unipi.mrcv.index.SPIMI;
+import it.unipi.mrcv.index.fileUtils;
 
 import static it.unipi.mrcv.index.SPIMI.dictionary;
 import static it.unipi.mrcv.index.SPIMI.postingLists;
@@ -31,8 +33,9 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
 
         long startTime = System.nanoTime();
-
-        SPIMI.exeSPIMI("reduced collection.tsv");
+        fileUtils.deleteTempFiles();
+        fileUtils.deleteFiles();
+        SPIMI.exeSPIMI("collection.tsv");
 
         long endTime = System.nanoTime();
         long duration = (endTime - startTime) / 1_000_000; // Convert from nanoseconds to milliseconds
@@ -40,13 +43,22 @@ public class Main {
         System.out.println("Elapsed time in milliseconds: " + duration);
 
         //SPIMI.readIndex("doc_0");
-        SPIMI.readDictionary("voc_0");
+        Merger.Merge();
+        SPIMI.readDictionary("vocabulary");
        /* RandomAccessFile p=new RandomAccessFile("voc_0","r");
         p.seek(68*800); //set the pointer to 0
         Merger.readLineFromDictionary(p,0);*/
         //System.out.println(SPIMI.debugCounter);
-
-
+        //SPIMI.readIndex("doc_0");
+        /*List<Integer> filesN=new ArrayList<>();
+        for(int i=0;i<SPIMI.counterBlock;i++){
+            filesN.add(i);
+        }
+        for(int i=0;i<SPIMI.counterBlock;i=i+2){
+            MergerThreadTry mg=new MergerThreadTry(filesN.subList(i,i+1),i*10+(i+1));
+            mg.start();
+        }
+        */
     }
 }
 

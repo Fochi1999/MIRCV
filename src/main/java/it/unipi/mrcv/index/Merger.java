@@ -45,7 +45,7 @@ public class Merger {
         for (int i = 0; i < num_blocks; i++) {
             //leggi il primo risultato di ogni blocco
             try {
-                RandomAccessFile p = new RandomAccessFile("voc_" + i, "r");
+                RandomAccessFile p = new RandomAccessFile(fileUtils.prefixVocFiles + i, "r");
                 p.seek(0); //set the pointer to 0
                 vocPointers.add(p);
                 RandomAccessFile d = new RandomAccessFile("doc_" + i, "r");
@@ -69,15 +69,15 @@ public class Merger {
 
         //ora codice
         try (
-                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get("docIds"),
+                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.finalDoc),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE);
-                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get("frequencies"),
+                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.finalFreq),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE);
-                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get("vocabulary"),
+                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.finalVoc),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)) {
@@ -103,6 +103,8 @@ public class Merger {
                 prevDocOff=docOff;
                 for (termBlock tb : termBlockList) {
                     int blockNumber = tb.getNumBlock();
+                    docPointer = new RandomAccessFile(fileUtils.prefixDocFiles + blockNumber, "r");
+                    frePointer = new RandomAccessFile(fileUtils.prefixFreqFiles + blockNumber, "r");
                     temporaryElem.setDf(temporaryElem.getDf() + tb.getDictionaryElem().getDf());
                     temporaryElem.setCf(temporaryElem.getCf() + tb.getDictionaryElem().getCf());
                     temporaryElem.setLength(temporaryElem.getLength() + tb.getDictionaryElem().getLength());
