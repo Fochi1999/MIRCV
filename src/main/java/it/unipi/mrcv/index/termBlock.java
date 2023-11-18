@@ -19,7 +19,8 @@ public class termBlock{
         this.numBlock=numBlock;
     }
     public termBlock(){
-
+        this.term = new DictionaryElem();
+        this.numBlock = 0;
     }
     public String getTerm(){
         return this.term.getTerm();
@@ -29,5 +30,9 @@ public class termBlock{
     }
     public DictionaryElem getDictionaryElem(){
         return this.term;
+    }
+
+    public void setNumBlock(int numBlock) {
+        this.numBlock = numBlock;
     }
 }
