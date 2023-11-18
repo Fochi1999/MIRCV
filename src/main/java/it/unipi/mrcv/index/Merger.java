@@ -26,13 +26,17 @@ public class Merger {
 
     public static void Merge() throws IOException {
         DictionaryElem temporaryElem;
+        termBlock currentBlock;
+        termBlock previousBlock;
+        byte[] termBytes = new byte[40];
         long docOff = 0;
         long freqOff = 0;
         long prevDocOff = 0;
         long prevFreqOff = 0;
         long termNumber = 0;
-        RandomAccessFile docPointer;
-        RandomAccessFile frePointer;
+        List<Integer> temporaryDocIds = new ArrayList<>();
+        List<Integer> temporaryFreqs = new ArrayList<>();
+        List<termBlock> pQueueElems = new ArrayList<>();
         MappedByteBuffer docsBuffer;
         MappedByteBuffer freqsBuffer;
         MappedByteBuffer vocBuffer;
@@ -55,8 +59,10 @@ public class Merger {
                 p.seek(0); //set the pointer to 0
                 freqPointers.add(q);
 
+                pQueueElems.add(new termBlock());
 
-                pQueue.add(readLineFromDictionary(p, i));
+                readLineFromDictionary(p, i, pQueueElems.get(i) , termBytes);
+                pQueue.add(pQueueElems.get(i));
 
 
             } catch (FileNotFoundException e) {
@@ -82,47 +88,47 @@ public class Merger {
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)) {
             while(!pQueue.isEmpty()) {
-                List<Integer> temporaryDocIds = new ArrayList<>();
-                List<Integer> temporaryFreqs = new ArrayList<>();
-                List<termBlock> termBlockList = new ArrayList<>();
+                previousBlock = pQueue.poll();
+                temporaryElem = previousBlock.getDictionaryElem();
+                String term = previousBlock.getTerm();
 
-                termBlockList.add(pQueue.poll());
-                String term = termBlockList.get(0).getTerm();
-                while (!pQueue.isEmpty() && term.equals(pQueue.peek().getTerm())) {
-                    termBlockList.add(pQueue.poll());
-                }
-
-                temporaryElem = new DictionaryElem(term);
-                //set to 0 all attributes
-                temporaryElem.setDf(0);
-                temporaryElem.setCf(0);
-                temporaryElem.setOffsetDoc(docOff);
-                temporaryElem.setOffsetFreq(freqOff);
-                //ripienare la pque con i nuovi termini, calcolare le statistiche e scrivere su un file
                 prevFreqOff=freqOff;
                 prevDocOff=docOff;
-                for (termBlock tb : termBlockList) {
-                    int blockNumber = tb.getNumBlock();
-                    temporaryElem.setDf(temporaryElem.getDf() + tb.getDictionaryElem().getDf());
-                    temporaryElem.setCf(temporaryElem.getCf() + tb.getDictionaryElem().getCf());
-                    temporaryElem.setLength(temporaryElem.getLength() + tb.getDictionaryElem().getLength());
-                    temporaryDocIds.addAll(readLineFromDocId(docPointers.get(blockNumber), tb.getDictionaryElem().getLength()));
-                    temporaryFreqs.addAll(readLineFromFreq(freqPointers.get(blockNumber), tb.getDictionaryElem().getLength()));
-                    //scrittura su file
 
-                    docOff += tb.getDictionaryElem().getLength() * 4;
-                    freqOff += tb.getDictionaryElem().getLength() * 4;
+                readLineFromDocId(docPointers.get(previousBlock.getNumBlock()), previousBlock.getDictionaryElem().getLength(), temporaryDocIds);
+                readLineFromFreq(freqPointers.get(previousBlock.getNumBlock()), previousBlock.getDictionaryElem().getLength(), temporaryFreqs);
+
+                if (!isEndOfFile(vocPointers.get(previousBlock.getNumBlock()))) {
+                    readLineFromDictionary(vocPointers.get(previousBlock.getNumBlock()), previousBlock.getNumBlock(), pQueueElems.get(previousBlock.getNumBlock()) , termBytes);
+                    pQueue.add(pQueueElems.get(previousBlock.getNumBlock()));
+                }
+
+                while (!pQueue.isEmpty() && term.equals(pQueue.peek().getTerm())) {
+                    currentBlock = pQueue.poll();
+                    int blockNumber = currentBlock.getNumBlock();
+                    temporaryElem.setDf(temporaryElem.getDf() + currentBlock.getDictionaryElem().getDf());
+                    temporaryElem.setCf(temporaryElem.getCf() + currentBlock.getDictionaryElem().getCf());
+                    temporaryElem.setLength(temporaryElem.getLength() + currentBlock.getDictionaryElem().getLength());
+                    readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLength(), temporaryDocIds);
+                    readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLength(), temporaryFreqs);
+
+                    docOff += currentBlock.getDictionaryElem().getLength() * 4;
+                    freqOff += currentBlock.getDictionaryElem().getLength() * 4;
+
                     if (isEndOfFile(vocPointers.get(blockNumber))) {
                         continue;
                     }
-                    pQueue.add(readLineFromDictionary(vocPointers.get(blockNumber), blockNumber));
-
+                    readLineFromDictionary(vocPointers.get(blockNumber), blockNumber, pQueueElems.get(blockNumber) , termBytes);
+                    pQueue.add(pQueueElems.get(blockNumber));
                 }
+
+
                 //write temporaryElem in DefiniteDictionary
                 docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIds.size() * 4);
                 freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqs.size() * 4);
                 vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber*68, DictionaryElem.size());
                 termNumber++;
+
                 for(int i=0;i<temporaryElem.getLength();i++){
                     docsBuffer.putInt(temporaryDocIds.get(i));
                     freqsBuffer.putInt(temporaryFreqs.get(i));
@@ -164,10 +170,9 @@ public class Merger {
 
     }
 
-    public static termBlock readLineFromDictionary(RandomAccessFile raf, int n) throws IOException {
+    public static void readLineFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
         // Allocate a buffer for the first 40 bytes
 
-        byte[] termBytes = new byte[40];
         raf.readFully(termBytes);
 
         // Read next 4 bytes into an int
@@ -193,24 +198,25 @@ public class Merger {
         System.out.println("Second long: " + long2);
         System.out.println("Third int: " + int3);*/
 
-
-        return new termBlock(SPIMI.decodeTerm(termBytes), int1, int2, long1, long2, int3, n);
+        readBlock.setNumBlock(n);
+        readBlock.getDictionaryElem().setTerm(SPIMI.decodeTerm(termBytes));
+        readBlock.getDictionaryElem().setDf(int1);
+        readBlock.getDictionaryElem().setCf(int2);
+        readBlock.getDictionaryElem().setOffsetDoc(long1);
+        readBlock.getDictionaryElem().setOffsetFreq(long2);
+        readBlock.getDictionaryElem().setLength(int3);
     }
 
-    public static List<Integer> readLineFromDocId(RandomAccessFile raf, int length) throws IOException {
-        List<Integer> ids = new ArrayList<>();
+    public static void readLineFromDocId(RandomAccessFile raf, int length, List<Integer> ids) throws IOException {
         for (int i = 0; i < length; i++) {
             ids.add(raf.readInt());
         }
-        return ids;
     }
 
-    public static List<Integer> readLineFromFreq(RandomAccessFile raf, int length) throws IOException {
-        List<Integer> freqs = new ArrayList<>();
+    public static void readLineFromFreq(RandomAccessFile raf, int length, List<Integer> freqs) throws IOException {
         for (int i = 0; i < length; i++) {
             freqs.add(raf.readInt());
         }
-        return freqs;
     }
 
     public static boolean isEndOfFile(RandomAccessFile raf) throws IOException {

@@ -48,6 +48,10 @@ public class DictionaryElem {
         this.length = length;
     };
 
+    public void setTerm(String term){
+        this.term = term;
+    };
+
     // get methods
     public String getTerm(){
         return this.term;

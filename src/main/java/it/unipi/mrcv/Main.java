@@ -32,19 +32,13 @@ public class Main {
 
         long startTime = System.nanoTime();
 
-        SPIMI.exeSPIMI("reduced collection.tsv");
+        // SPIMI.exeSPIMI("collection.tsv");
+        Merger.Merge();
 
         long endTime = System.nanoTime();
         long duration = (endTime - startTime) / 1_000_000; // Convert from nanoseconds to milliseconds
-
         System.out.println("Elapsed time in milliseconds: " + duration);
 
-        //SPIMI.readIndex("doc_0");
-        SPIMI.readDictionary("voc_0");
-       /* RandomAccessFile p=new RandomAccessFile("voc_0","r");
-        p.seek(68*800); //set the pointer to 0
-        Merger.readLineFromDictionary(p,0);*/
-        //System.out.println(SPIMI.debugCounter);
 
 
     }
