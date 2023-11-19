@@ -35,4 +35,13 @@ public class termBlock{
     public void setNumBlock(int numBlock) {
         this.numBlock = numBlock;
     }
+
+    public void copyBlock(termBlock t){
+        this.term.setDf(t.getDictionaryElem().getDf());
+        this.term.setCf(t.getDictionaryElem().getCf());
+        this.term.setOffsetDoc(t.getDictionaryElem().getOffsetDoc());
+        this.term.setOffsetFreq(t.getDictionaryElem().getOffsetFreq());
+        this.term.setLength(t.getDictionaryElem().getLength());
+        this.numBlock=t.getNumBlock();
+    }
 }

@@ -25,7 +25,7 @@ public class Merger {
 
 
     public static void Merge() throws IOException {
-        DictionaryElem temporaryElem;
+        termBlock temporaryElem = new termBlock();
         termBlock currentBlock;
         termBlock previousBlock;
         byte[] termBytes = new byte[40];
@@ -88,8 +88,9 @@ public class Merger {
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)) {
             while(!pQueue.isEmpty()) {
+
                 previousBlock = pQueue.poll();
-                temporaryElem = previousBlock.getDictionaryElem();
+                temporaryElem.copyBlock(previousBlock);
                 String term = previousBlock.getTerm();
 
                 prevFreqOff=freqOff;
@@ -106,9 +107,9 @@ public class Merger {
                 while (!pQueue.isEmpty() && term.equals(pQueue.peek().getTerm())) {
                     currentBlock = pQueue.poll();
                     int blockNumber = currentBlock.getNumBlock();
-                    temporaryElem.setDf(temporaryElem.getDf() + currentBlock.getDictionaryElem().getDf());
-                    temporaryElem.setCf(temporaryElem.getCf() + currentBlock.getDictionaryElem().getCf());
-                    temporaryElem.setLength(temporaryElem.getLength() + currentBlock.getDictionaryElem().getLength());
+                    temporaryElem.getDictionaryElem().setDf(temporaryElem.getDictionaryElem().getDf() + currentBlock.getDictionaryElem().getDf());
+                    temporaryElem.getDictionaryElem().setCf(temporaryElem.getDictionaryElem().getCf() + currentBlock.getDictionaryElem().getCf());
+                    temporaryElem.getDictionaryElem().setLength(temporaryElem.getDictionaryElem().getLength() + currentBlock.getDictionaryElem().getLength());
                     readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLength(), temporaryDocIds);
                     readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLength(), temporaryFreqs);
 
@@ -123,13 +124,13 @@ public class Merger {
                 }
 
 
-                //write temporaryElem in DefiniteDictionary
+                //write temporaryElem.getDictionaryElem() in DefiniteDictionary
                 docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIds.size() * 4);
                 freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqs.size() * 4);
                 vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber*68, DictionaryElem.size());
                 termNumber++;
 
-                for(int i=0;i<temporaryElem.getLength();i++){
+                for(int i=0;i<temporaryElem.getDictionaryElem().getLength();i++){
                     docsBuffer.putInt(temporaryDocIds.get(i));
                     freqsBuffer.putInt(temporaryFreqs.get(i));
                 }
@@ -153,11 +154,11 @@ public class Merger {
                 vocBuffer.put(truncatedBuffer);
 
                 // write statistics
-                vocBuffer.putInt(temporaryElem.getDf());
-                vocBuffer.putInt(temporaryElem.getCf());
-                vocBuffer.putLong(temporaryElem.getOffsetDoc());
-                vocBuffer.putLong(temporaryElem.getOffsetFreq());
-                vocBuffer.putInt(temporaryElem.getLength());
+                vocBuffer.putInt(temporaryElem.getDictionaryElem().getDf());
+                vocBuffer.putInt(temporaryElem.getDictionaryElem().getCf());
+                vocBuffer.putLong(temporaryElem.getDictionaryElem().getOffsetDoc());
+                vocBuffer.putLong(temporaryElem.getDictionaryElem().getOffsetFreq());
+                vocBuffer.putInt(temporaryElem.getDictionaryElem().getLength());
                 //svuotare termblocklist e dictionaryElem
                 temporaryDocIds.clear();
                 temporaryFreqs.clear();
@@ -172,23 +173,27 @@ public class Merger {
 
     public static void readLineFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
         // Allocate a buffer for the first 40 bytes
-
-        raf.readFully(termBytes);
+        ByteBuffer vocBuffer = ByteBuffer.allocate(DictionaryElem.size());
+        while(vocBuffer.hasRemaining()) {
+            raf.getChannel().read(vocBuffer);
+        }
+        vocBuffer.rewind();
+        vocBuffer.get(termBytes, 0, 40);
 
         // Read next 4 bytes into an int
-        int int1 = raf.readInt();
+        int int1 = vocBuffer.getInt();
 
         // Read next 4 bytes into an int
-        int int2 = raf.readInt();
+        int int2 = vocBuffer.getInt();
 
         // Read next 8 bytes into a long
-        long long1 = raf.readLong();
+        long long1 = vocBuffer.getLong();
 
         // Read next 8 bytes into a long
-        long long2 = raf.readLong();
+        long long2 = vocBuffer.getLong();
 
         // Read next 4 bytes into an int
-        int int3 = raf.readInt();
+        int int3 = vocBuffer.getInt();
 
         // For demonstration purposes: print out the values
 /*        System.out.println("ByteBuffer contents: " + SPIMI.decodeTerm(termBytes));
@@ -208,14 +213,24 @@ public class Merger {
     }
 
     public static void readLineFromDocId(RandomAccessFile raf, int length, List<Integer> ids) throws IOException {
-        for (int i = 0; i < length; i++) {
-            ids.add(raf.readInt());
+        ByteBuffer docsIdsBuffer = ByteBuffer.allocate(length * 4);
+        while(docsIdsBuffer.hasRemaining()) {
+            raf.getChannel().read(docsIdsBuffer);
+        }
+        docsIdsBuffer.rewind();
+        for(int i=0;i<length;i++){
+            ids.add(docsIdsBuffer.getInt());
         }
     }
 
     public static void readLineFromFreq(RandomAccessFile raf, int length, List<Integer> freqs) throws IOException {
-        for (int i = 0; i < length; i++) {
-            freqs.add(raf.readInt());
+        ByteBuffer freqsBuffer = ByteBuffer.allocate(length * 4);
+        while(freqsBuffer.hasRemaining()) {
+            raf.getChannel().read(freqsBuffer);
+        }
+        freqsBuffer.rewind();
+        for(int i=0;i<length;i++){
+            freqs.add(freqsBuffer.getInt());
         }
     }
 
