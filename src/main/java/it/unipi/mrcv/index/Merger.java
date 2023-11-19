@@ -87,6 +87,7 @@ public class Merger {
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)) {
+
             while(!pQueue.isEmpty()) {
 
                 previousBlock = pQueue.poll();
@@ -113,15 +114,15 @@ public class Merger {
                     readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLength(), temporaryDocIds);
                     readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLength(), temporaryFreqs);
 
-                    docOff += currentBlock.getDictionaryElem().getLength() * 4;
-                    freqOff += currentBlock.getDictionaryElem().getLength() * 4;
-
                     if (isEndOfFile(vocPointers.get(blockNumber))) {
                         continue;
                     }
                     readLineFromDictionary(vocPointers.get(blockNumber), blockNumber, pQueueElems.get(blockNumber) , termBytes);
                     pQueue.add(pQueueElems.get(blockNumber));
                 }
+
+                docOff += temporaryElem.getDictionaryElem().getLength() * 4;
+                freqOff += temporaryElem.getDictionaryElem().getLength() * 4;
 
 
                 //write temporaryElem.getDictionaryElem() in DefiniteDictionary
@@ -156,8 +157,8 @@ public class Merger {
                 // write statistics
                 vocBuffer.putInt(temporaryElem.getDictionaryElem().getDf());
                 vocBuffer.putInt(temporaryElem.getDictionaryElem().getCf());
-                vocBuffer.putLong(temporaryElem.getDictionaryElem().getOffsetDoc());
-                vocBuffer.putLong(temporaryElem.getDictionaryElem().getOffsetFreq());
+                vocBuffer.putLong(prevDocOff);
+                vocBuffer.putLong(prevFreqOff);
                 vocBuffer.putInt(temporaryElem.getDictionaryElem().getLength());
                 //svuotare termblocklist e dictionaryElem
                 temporaryDocIds.clear();
