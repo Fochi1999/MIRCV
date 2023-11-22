@@ -20,40 +20,52 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+//java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
 public class Merger {
+
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
     //public static int num_blocks = 8;
      public static int num_blocks = SPIMI.counterBlock;
     public static boolean compression=true;
 
+
     public static void Merge() throws IOException {
+        // temporaryElem contains the final vocabulary entry that is being build
         termBlock temporaryElem = new termBlock();
+        // currentBlock contains the current vocabulary entry that is being read from a partial vocabulary
         termBlock currentBlock;
-        termBlock previousBlock;
+        // termBytes is a buffer used to read the term from the vocabulary
         byte[] termBytes = new byte[40];
+        // docOff and freqOff are used to store the increasing offset at each new docId or frequency
         long docOff = 0;
         long freqOff = 0;
-        long prevDocOff = 0;
-        long prevFreqOff = 0;
+        // latestDocOff and latestFreqOff are used to store the offset of the latest vocabulary entry
+        long latestDocOff;
+        long latestFreqOff;
+        // termNumber is used to store the number of the vocabulary entry, used to write the vocabulary at the correct position
         long termNumber = 0;
+        // temporaryDocIds and temporaryFreqs are used to store the docIds and frequencies of the current vocabulary entry
         List<Integer> temporaryDocIds = new ArrayList<>();
         List<Integer> temporaryFreqs = new ArrayList<>();
+        // pQueueElems is used to store the first vocabulary entry of each partial vocabulary, all added to the priority queue
         List<termBlock> pQueueElems = new ArrayList<>();
+        // docsBuffer, freqsBuffer and vocBuffer are used to write the docIds, frequencies and vocabulary entries in the final files
         MappedByteBuffer docsBuffer;
         MappedByteBuffer freqsBuffer;
         MappedByteBuffer vocBuffer;
+        // docPointers, freqPointers and vocPointers are used to store the pointers to the partial vocabularies
         List<RandomAccessFile> docPointers = new ArrayList<>();
         List<RandomAccessFile> freqPointers = new ArrayList<>();
         List<RandomAccessFile> vocPointers = new ArrayList<>();
+        // pQueue is the priority queue used to store the vocabulary entries
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
         String pathDocs= Global.compression?Global.finalDoc:Global.finalDocCompressed;
         String pathFreqs= Global.compression?Global.finalFreq:Global.finalFreqCompressed;
         String pathVoc= Global.compression?Global.finalVoc:Global.finalVocCompressed;
 
-        //inizializzazione
+        // initialize the pointers to the partial vocabularies and the priority queue
         for (int i = 0; i < num_blocks; i++) {
-            //leggi il primo risultato di ogni blocco
             try {
                 RandomAccessFile p = new RandomAccessFile("voc_" + i, "r");
                 p.seek(0); //set the pointer to 0
@@ -67,9 +79,8 @@ public class Merger {
 
                 pQueueElems.add(new termBlock());
 
-                readLineFromDictionary(p, i, pQueueElems.get(i) , termBytes);
+                readEntryFromDictionary(p, i, pQueueElems.get(i), termBytes);
                 pQueue.add(pQueueElems.get(i));
-
 
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
@@ -79,7 +90,7 @@ public class Merger {
         }
 
 
-        //ora codice
+        // initialize the final files
         try (
 
                 FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(pathDocs),
@@ -95,26 +106,28 @@ public class Merger {
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)) {
 
-            while(!pQueue.isEmpty()) {
 
-                previousBlock = pQueue.poll();
-                temporaryElem.copyBlock(previousBlock);
-                System.out.println("QUI1");
-                System.out.println(temporaryElem.getTerm());
-                String term = previousBlock.getTerm();
-
-                prevFreqOff=freqOff;
-                prevDocOff=docOff;
-
-                readLineFromDocId(docPointers.get(previousBlock.getNumBlock()), previousBlock.getDictionaryElem().getLengthDoc(), temporaryDocIds);
-                readLineFromFreq(freqPointers.get(previousBlock.getNumBlock()), previousBlock.getDictionaryElem().getLengthDoc(), temporaryFreqs);
-
-                if (!isEndOfFile(vocPointers.get(previousBlock.getNumBlock()))) {
-                    readLineFromDictionary(vocPointers.get(previousBlock.getNumBlock()), previousBlock.getNumBlock(), pQueueElems.get(previousBlock.getNumBlock()) , termBytes);
-                    pQueue.add(pQueueElems.get(previousBlock.getNumBlock()));
+            // the whole merge is done in this while loop
+            while (!pQueue.isEmpty()) {
+                // currentBlock is the vocabulary entry that is being read from the priority queue
+                currentBlock = pQueue.poll();
+                temporaryElem.copyBlock(currentBlock);
+                String term = currentBlock.getTerm();
+                // the offsets of the docIds and frequencies are updated to the starting offset of the current term
+                latestFreqOff = freqOff;
+                latestDocOff = docOff;
+                // the docIds and frequencies of the current term are read from the block where the term was found and added to the temporary lists
+                readLineFromDocId(docPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLength(), temporaryDocIds);
+                readLineFromFreq(freqPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLength(), temporaryFreqs);
+                // if the block is not finished, the next vocabulary entry is read and added to the priority queue
+                if (!isEndOfFile(vocPointers.get(currentBlock.getNumBlock()))) {
+                    readEntryFromDictionary(vocPointers.get(currentBlock.getNumBlock()), currentBlock.getNumBlock(), pQueueElems.get(currentBlock.getNumBlock()), termBytes);
+                    pQueue.add(pQueueElems.get(currentBlock.getNumBlock()));
                 }
 
+                // the priority queue is checked to see if there are other vocabulary entries with the same term
                 while (!pQueue.isEmpty() && term.equals(pQueue.peek().getTerm())) {
+                    // the read from the queue every element with the same term and update the statistics of the temporaryElem
                     currentBlock = pQueue.poll();
                     int blockNumber = currentBlock.getNumBlock();
                     temporaryElem.getDictionaryElem().setDf(temporaryElem.getDictionaryElem().getDf() + currentBlock.getDictionaryElem().getDf());
@@ -126,9 +139,10 @@ public class Merger {
                     if (isEndOfFile(vocPointers.get(blockNumber))) {
                         continue;
                     }
-                    readLineFromDictionary(vocPointers.get(blockNumber), blockNumber, pQueueElems.get(blockNumber) , termBytes);
+                    readEntryFromDictionary(vocPointers.get(blockNumber), blockNumber, pQueueElems.get(blockNumber), termBytes);
                     pQueue.add(pQueueElems.get(blockNumber));
                 }
+
 
 
 
@@ -173,6 +187,7 @@ public class Merger {
                 temporaryFreqs.clear();
 
             } //fine while
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -180,10 +195,11 @@ public class Merger {
 
     }
 
-    public static void readLineFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
-        // Allocate a buffer for the first 40 bytes
+    // method to read an entry from a vocabulary using the input array for the term and writing the entry in the input termBlock
+    public static void readEntryFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
+        // Read 40 bytes into a byte array
         ByteBuffer vocBuffer = ByteBuffer.allocate(DictionaryElem.size());
-        while(vocBuffer.hasRemaining()) {
+        while (vocBuffer.hasRemaining()) {
             raf.getChannel().read(vocBuffer);
         }
         vocBuffer.rewind();
@@ -206,13 +222,7 @@ public class Merger {
 
         int int4=vocBuffer.getInt();
 
-        // For demonstration purposes: print out the values
-/*        System.out.println("ByteBuffer contents: " + SPIMI.decodeTerm(termBytes));
-        System.out.println("First int: " + int1);
-        System.out.println("Second int: " + int2);
-        System.out.println("First long: " + long1);
-        System.out.println("Second long: " + long2);
-        System.out.println("Third int: " + int3);*/
+
         readBlock.setNumBlock(n);
         readBlock.getDictionaryElem().setTerm(SPIMI.decodeTerm(termBytes));
         readBlock.getDictionaryElem().setDf(int1);
@@ -224,28 +234,31 @@ public class Merger {
         readBlock.getDictionaryElem().printDebug();
     }
 
+    // method to read a line of docIds from a file and write it in the input list
     public static void readLineFromDocId(RandomAccessFile raf, int length, List<Integer> ids) throws IOException {
         ByteBuffer docsIdsBuffer = ByteBuffer.allocate(length * 4);
-        while(docsIdsBuffer.hasRemaining()) {
+        while (docsIdsBuffer.hasRemaining()) {
             raf.getChannel().read(docsIdsBuffer);
         }
         docsIdsBuffer.rewind();
-        for(int i=0;i<length;i++){
+        for (int i = 0; i < length; i++) {
             ids.add(docsIdsBuffer.getInt());
         }
     }
 
+    // method to read a line of frequencies from a file and write it in the input list
     public static void readLineFromFreq(RandomAccessFile raf, int length, List<Integer> freqs) throws IOException {
         ByteBuffer freqsBuffer = ByteBuffer.allocate(length * 4);
-        while(freqsBuffer.hasRemaining()) {
+        while (freqsBuffer.hasRemaining()) {
             raf.getChannel().read(freqsBuffer);
         }
         freqsBuffer.rewind();
-        for(int i=0;i<length;i++){
+        for (int i = 0; i < length; i++) {
             freqs.add(freqsBuffer.getInt());
         }
     }
 
+    // method to check if the pointer of a file is at the end of the file
     public static boolean isEndOfFile(RandomAccessFile raf) throws IOException {
         return raf.getFilePointer() == raf.length();
     }
