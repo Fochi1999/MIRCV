@@ -1,5 +1,7 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.compression.Unary;
+import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.DictionaryElem;
 
 import java.io.FileNotFoundException;
@@ -22,7 +24,7 @@ public class Merger {
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
     public static int num_blocks = 8;
     // public static int num_blocks = SPIMI.counterBlock;
-
+    public static boolean compression=true;
 
     public static void Merge() throws IOException {
         termBlock temporaryElem = new termBlock();
@@ -121,21 +123,53 @@ public class Merger {
                     pQueue.add(pQueueElems.get(blockNumber));
                 }
 
-                docOff += temporaryElem.getDictionaryElem().getLength() * 4;
-                freqOff += temporaryElem.getDictionaryElem().getLength() * 4;
 
 
-                //write temporaryElem.getDictionaryElem() in DefiniteDictionary
-                docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIds.size() * 4);
-                freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqs.size() * 4);
-                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber*68, DictionaryElem.size());
-                termNumber++;
+                if(compression==true){
 
-                for(int i=0;i<temporaryElem.getDictionaryElem().getLength();i++){
-                    docsBuffer.putInt(temporaryDocIds.get(i));
-                    freqsBuffer.putInt(temporaryFreqs.get(i));
+                    byte[] temporaryDocIdsBytes= VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);
+                    byte[] temporaryFreqsBytes= Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs);
+                    docOff += temporaryDocIdsBytes.length;
+                    freqOff += temporaryFreqsBytes.length;
+                    /*System.out.println("\nSTO SCRIVENDO COMPRESSO LA LISTA: ");
+                    for(int x: temporaryDocIds){
+                        System.out.print(x+" ");
+                    }
+                    System.out.println("");
+                    System.out.println("lunghezza:"+temporaryDocIdsBytes.length+"\nCOMPRESSA:");
+                    for(long x:VariableByte.fromByteToArrayLong(temporaryDocIdsBytes)){
+                        System.out.print(x+" ");
+                    }
+
+                    System.out.println("\nSTO SCRIVENDO COMPRESSO LA LISTA: ");
+                    for(int x: temporaryFreqs){
+                        System.out.print(x+" ");
+                    }
+                    System.out.println("");
+                    System.out.println("lunghezza:"+temporaryFreqsBytes.length+"\nCOMPRESSA:");
+                    for(int x:Unary.unaryToArrayInt(temporaryFreqsBytes)){
+                        System.out.print(x+" ");
+                    }*/
+                    docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIdsBytes.length);
+                    freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqsBytes.length);
+                    docsBuffer.put(temporaryDocIdsBytes);
+                    freqsBuffer.put(temporaryFreqsBytes);
+                    temporaryElem.getDictionaryElem().setLength(temporaryDocIdsBytes.length); //TODO cambiare lenght in più lenght
+
                 }
-
+                else {
+                    docOff += temporaryElem.getDictionaryElem().getLength() * 4;
+                    freqOff += temporaryElem.getDictionaryElem().getLength() * 4;
+                    //write temporaryElem.getDictionaryElem() in DefiniteDictionary
+                    docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIds.size() * 4);
+                    freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqs.size() * 4);
+                    for (int i = 0; i < temporaryElem.getDictionaryElem().getLength(); i++) {
+                        docsBuffer.putInt(temporaryDocIds.get(i));
+                        freqsBuffer.putInt(temporaryFreqs.get(i));
+                    }
+                }
+                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * 68, DictionaryElem.size());
+                termNumber++;
 
                 CharBuffer charBuffer = CharBuffer.allocate(40);
                 //populate char buffer char by char
@@ -163,7 +197,7 @@ public class Merger {
                 //svuotare termblocklist e dictionaryElem
                 temporaryDocIds.clear();
                 temporaryFreqs.clear();
-                
+
             } //fine while
         } catch (Exception e) {
             e.printStackTrace();
