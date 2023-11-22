@@ -17,70 +17,99 @@ import java.util.*;
 
 
 public class SPIMI {
+    // counter for the block
     public static int counterBlock = 0;
+    // counter for the postings in the block
     public static int numPosting = 0;
+    // Dictionary in memory
     public static Dictionary dictionary = new Dictionary();
-    /* Posting list of a term in memory */
+    // Posting Lists in memory
     public static InvertedIndex postingLists = new InvertedIndex();
-    //TODO: informazioni riguardo il documento
-    public static int debugCounter=0; //TODO ELIMINARE
+    // allocate memory for the docIndex file; this is a magic number, it is more than enough for one block worth of docIdex
+    public static ByteBuffer docIndexBuffer = ByteBuffer.allocateDirect(1024 * 1024 * 30);
+
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
-        //TODO: per un tot di memoria leggere x file
-        /* Setting the total used memory to 80% */
+        // Max memory usable by the JVM
         long MaxUsableMemory = Runtime.getRuntime().maxMemory() * 80 / 100;
+        // docIds start from 0
         int docId = 0;
+        // variable that stores the current docNumber
+        int documentNumber = 0;
+        // read the document collection line by line
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
+        // read the first line
         String line = reader.readLine();
 
-        while (line != null) { //read a full collection
+        // read the document collection line by line and execute the SPIMI algorithm
+        while (line != null) {
 
-            docId = docId + 1;
-            List<String> tokens = preprocess.all(line);
+            //split the line in two parts: the first is the document number, the second is the text
+            String[] parts = line.split("\t", 2);
+            try {
+                documentNumber = Integer.parseInt(parts[0]);
+            } catch (NumberFormatException e) {
+                System.err.println("The first part is not an integer. Exiting.");
+                System.exit(1);
+            }
+
+            // preprocess the line and obtain the tokens
+            List<String> tokens = preprocess.all(parts[1]);
+            // write the docId, the document number and the document length in the docIndex buffer
+            docIndexBuffer.putInt(docId);
+            docIndexBuffer.putInt(documentNumber);
+            docIndexBuffer.putInt(tokens.size());
+
+            // for each term in the line create/update posting lists and dictionary
             for (String term : tokens) {
-                if(term.length()==0){
+                if (term.length() == 0) {
                     continue;
                 }
                 DictionaryElem entryDictionary = dictionary.getElem(term);
+                // if the term is not in the dictionary we create a new entry
                 if (entryDictionary == null) {
                     dictionary.insertElem(new DictionaryElem(term));
                     postingLists.addPosting(term, new Posting(docId, 1));
                     numPosting++;
-
+                // if the term is in the dictionary we update the entry
                 } else {
                     entryDictionary.setCf(entryDictionary.getCf() + 1);
                     PostingList list = postingLists.getPostings(term);
                     List<Posting> Postings = list.getPostings();
                     Posting lastPosting = Postings.get(Postings.size() - 1);
+                    // if the last posting has the same docId we update the frequency
                     if (lastPosting.getDocid() == docId) {
                         lastPosting.setFrequency(lastPosting.getFrequency() + 1);
+                    // if the last posting has a different docId we create a new posting and update the document frequency
                     } else {
                         entryDictionary.setDf(entryDictionary.getDf() + 1);
                         Postings.add(new Posting(docId, 1));
                         numPosting++;
                     }
                 }
-
-
-
-
-
             }
+            // increase the docId
+            docId++;
+            // check if the memory is full, in which case the block is written on disk
             if (Runtime.getRuntime().totalMemory() > MaxUsableMemory) {
                 System.out.printf("(INFO) MAXIMUM PERMITTED USE OF MEMORY ACHIEVED: WRITING BLOCK '%d' ON CURRENT DISC.\n", counterBlock);
-                //write to disk and reset dictionary and Posting Lists
-                //Serializzazione e scrittura su file poi si vede dove metterla, la metteremo in inverted index perchè si
                 writeToDisk();
             }
-
+            // read the next line if memory is not full
             line = reader.readLine();
         }
+        // write the last block on disk
         writeToDisk();
     }
 
+    // function that writes the block on disk
     private static void writeToDisk() throws IOException, InterruptedException {
-        //Serializzazione e scrittura su file poi si vede dove metterla, la metteremo in inverted index perchè si
-
+        // instantiate the fileUtils class
         try (
+                FileChannel docIndexFchan = FileChannel.open(Paths.get("docIndex"),
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.APPEND
+                );
                 FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixDocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
@@ -95,35 +124,43 @@ public class SPIMI {
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)
         ) {
+            // writing the docIndex buffer to file
+            docIndexBuffer.flip();
+            // Write the contents of the buffer to the file
+            while (docIndexBuffer.hasRemaining()) {
+                docIndexFchan.write(docIndexBuffer);
+            }
+
             // instantiation of MappedByteBuffer for integer list of docids
             MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for integer list of freqs
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
-            //TODO: allocare la memoria giusta per il vocabulary
-
+            // instantiation of MappedByteBuffer for vocabulary
             MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
-            long vocOffset = 0;
-            // check if MappedByteBuffers are correctly instantiated
+
+            // for each term in the term-postingList treemap write everything to file
             for (Map.Entry<String, PostingList>
                     entry : postingLists.getTree().entrySet()) {
-
+                // update the offset of the term in the dictionary
                 DictionaryElem dictionaryElem = dictionary.getElem(entry.getKey());
                 dictionaryElem.setOffsetDoc(docsBuffer.position());
                 dictionaryElem.setOffsetFreq(freqsBuffer.position());
-                int counter = 0;
+                int postingCounter = 0;
+                // write the postings in the respective docIds and frequencies files
                 for (Posting posting : entry.getValue().getPostings()) {
                     docsBuffer.putInt(posting.getDocid());
                     freqsBuffer.putInt(posting.getFrequency());
-                    counter++;
+                    postingCounter++;
                 }
-                dictionaryElem.setLength(counter);
+                // update the length of the posting list in the dictionary
+                dictionaryElem.setLength(postingCounter);
+
                 //allocate char buffer to write term
-                CharBuffer charBuffer = CharBuffer.allocate(40); //TODO: verificare la size
+                CharBuffer charBuffer = CharBuffer.allocate(40);
                 String term = dictionaryElem.getTerm();
                 //populate char buffer char by char
                 for (int i = 0; i < term.length() && i < 40; i++)
                     charBuffer.put(i, term.charAt(i));
-
                 // Write the term into file
                 ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
                 // Encode the CharBuffer into a ByteBuffer
@@ -134,8 +171,8 @@ public class SPIMI {
                 for (int i = 0; i < 40; i++) {
                     truncatedBuffer.put(encodedBuffer.get(i));
                 }
-
                 truncatedBuffer.rewind();
+                // Write the term into file
                 vocBuffer.put(truncatedBuffer);
 
                 // write statistics
@@ -147,15 +184,21 @@ public class SPIMI {
 
             }
         }
+
+        // increase the counter of the block
         counterBlock++;
+        // clear the memory
         postingLists.clear();
         dictionary.clear();
-        dictionary = new Dictionary();
-        postingLists = new InvertedIndex();
-        numPosting = 0;
+        docIndexBuffer.clear();
+        // hope that the garbage collector will free the memory
         System.gc();
         Thread.sleep(1500);
-
+        // reset data structures
+        dictionary = new Dictionary();
+        postingLists = new InvertedIndex();
+        // reset the number of postings
+        numPosting = 0;
     }
 
     // function that reads the docIds file OR the freqs file and prints them
@@ -184,8 +227,7 @@ public class SPIMI {
         }
     }
 
-
-
+    // function that reads the vocabulary file and prints the terms and the statistics
     public static void readDictionary(String path) {
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
@@ -237,6 +279,7 @@ public class SPIMI {
         }
     }
 
+    // function that decodes the term from the byte array
     public static String decodeTerm(byte[] termBytes) {
         // Create a ByteBuffer from the byte array
         ByteBuffer termBuffer = ByteBuffer.wrap(termBytes);
@@ -245,7 +288,6 @@ public class SPIMI {
         // Convert CharBuffer to String
         return charBuffer.toString().trim(); // Trim the string in case there are any zero padding bytes
     }
-
 
 }
 
