@@ -57,7 +57,7 @@ public class DictionaryElem {
     };
 
     public void setLengthFreq(int lengthFreq){
-        this.lengthDoc = lengthFreq;
+        this.lengthFreq = lengthFreq;
     };
 
     public void setTerm(String term){
@@ -127,6 +127,10 @@ public class DictionaryElem {
     }
 
     public void printDebug() {
-        System.out.println(term);
+        System.out.println("DEBUG:");
+        System.out.println("term: "+term);
+        System.out.println("df: "+df);
+        System.out.println("docLength: "+lengthDoc);
+        System.out.println("freqLength: "+lengthFreq);
     }
 }

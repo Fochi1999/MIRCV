@@ -25,9 +25,9 @@ public class Merger {
 
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
-    //public static int num_blocks = 8;
-     public static int num_blocks = SPIMI.counterBlock;
-    public static boolean compression=true;
+    public static int num_blocks = 8;
+     //public static int num_blocks = SPIMI.counterBlock;
+    public static boolean compression=Global.compression;
 
 
     public static void Merge() throws IOException {
@@ -60,20 +60,21 @@ public class Merger {
         List<RandomAccessFile> vocPointers = new ArrayList<>();
         // pQueue is the priority queue used to store the vocabulary entries
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
-        String pathDocs= Global.compression?Global.finalDoc:Global.finalDocCompressed;
-        String pathFreqs= Global.compression?Global.finalFreq:Global.finalFreqCompressed;
-        String pathVoc= Global.compression?Global.finalVoc:Global.finalVocCompressed;
+        //if flag compression is set on false change files names
+        String pathDocs= !Global.compression?Global.finalDoc:Global.finalDocCompressed;
+        String pathFreqs= !Global.compression?Global.finalFreq:Global.finalFreqCompressed;
+        String pathVoc= !Global.compression?Global.finalVoc:Global.finalVocCompressed;
 
         // initialize the pointers to the partial vocabularies and the priority queue
         for (int i = 0; i < num_blocks; i++) {
             try {
-                RandomAccessFile p = new RandomAccessFile("voc_" + i, "r");
+                RandomAccessFile p = new RandomAccessFile(Global.prefixVocFiles + i, "r");
                 p.seek(0); //set the pointer to 0
                 vocPointers.add(p);
-                RandomAccessFile d = new RandomAccessFile("doc_" + i, "r");
+                RandomAccessFile d = new RandomAccessFile(Global.prefixDocFiles + i, "r");
                 p.seek(0); //set the pointer to 0
                 docPointers.add(d);
-                RandomAccessFile q = new RandomAccessFile("freq_" + i, "r");
+                RandomAccessFile q = new RandomAccessFile(Global.prefixFreqFiles + i, "r");
                 p.seek(0); //set the pointer to 0
                 freqPointers.add(q);
 
@@ -117,8 +118,8 @@ public class Merger {
                 latestFreqOff = freqOff;
                 latestDocOff = docOff;
                 // the docIds and frequencies of the current term are read from the block where the term was found and added to the temporary lists
-                readLineFromDocId(docPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLength(), temporaryDocIds);
-                readLineFromFreq(freqPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLength(), temporaryFreqs);
+                readLineFromDocId(docPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLengthDoc(), temporaryDocIds);
+                readLineFromFreq(freqPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLengthFreq(), temporaryFreqs);
                 // if the block is not finished, the next vocabulary entry is read and added to the priority queue
                 if (!isEndOfFile(vocPointers.get(currentBlock.getNumBlock()))) {
                     readEntryFromDictionary(vocPointers.get(currentBlock.getNumBlock()), currentBlock.getNumBlock(), pQueueElems.get(currentBlock.getNumBlock()), termBytes);
@@ -133,6 +134,7 @@ public class Merger {
                     temporaryElem.getDictionaryElem().setDf(temporaryElem.getDictionaryElem().getDf() + currentBlock.getDictionaryElem().getDf());
                     temporaryElem.getDictionaryElem().setCf(temporaryElem.getDictionaryElem().getCf() + currentBlock.getDictionaryElem().getCf());
                     temporaryElem.getDictionaryElem().setLengthDoc(temporaryElem.getDictionaryElem().getLengthDoc() + currentBlock.getDictionaryElem().getLengthDoc());
+                    temporaryElem.getDictionaryElem().setLengthDoc(temporaryElem.getDictionaryElem().getLengthFreq() + currentBlock.getDictionaryElem().getLengthFreq());
                     readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDoc(), temporaryDocIds);
                     readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDoc(), temporaryFreqs);
 
@@ -143,46 +145,39 @@ public class Merger {
                     pQueue.add(pQueueElems.get(blockNumber));
                 }
 
-
-
-
+                //if compression is active use VariableByte to compress docids and Unary to compress frequencies
                 if(compression==true){
-
-                    byte[] temporaryDocIdsBytes= VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);
-                    byte[] temporaryFreqsBytes= Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs);
+                    byte[] temporaryDocIdsBytes = VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);
+                    byte[] temporaryFreqsBytes = Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs);
+                    //set the offset for the next term and open the buffers
                     docOff += temporaryDocIdsBytes.length;
                     freqOff += temporaryFreqsBytes.length;
-                    docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIdsBytes.length);
-                    freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqsBytes.length);
+                    docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, latestDocOff, temporaryDocIdsBytes.length);
+                    freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestFreqOff, temporaryFreqsBytes.length);
                     docsBuffer.put(temporaryDocIdsBytes);
                     freqsBuffer.put(temporaryFreqsBytes);
+                    //if compression is set lenght is the bytes size of their entry
                     temporaryElem.getDictionaryElem().setLengthDoc(temporaryDocIdsBytes.length);
                     temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqsBytes.length);
-                    temporaryElem.getDictionaryElem().setOffsetFreq(prevFreqOff);
-                    temporaryElem.getDictionaryElem().setOffsetDoc(prevDocOff);
 
-                }
-                else {
+                } else {
                     docOff += temporaryElem.getDictionaryElem().getLengthDoc() * 4;
                     freqOff += temporaryElem.getDictionaryElem().getLengthDoc() * 4;
-                    //write temporaryElem.getDictionaryElem() in DefiniteDictionary
-                    docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, prevDocOff, temporaryDocIds.size() * 4);
-                    freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, prevFreqOff, temporaryFreqs.size() * 4);
+                    docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, latestDocOff, temporaryDocIds.size() * 4);
+                    freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestFreqOff, temporaryFreqs.size() * 4);
                     for (int i = 0; i < temporaryElem.getDictionaryElem().getLengthDoc(); i++) {
                         docsBuffer.putInt(temporaryDocIds.get(i));
                         freqsBuffer.putInt(temporaryFreqs.get(i));
+
                     }
                     temporaryElem.getDictionaryElem().setLengthDoc(temporaryDocIds.size());
                     temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqs.size());
-                    temporaryElem.getDictionaryElem().setOffsetFreq(prevFreqOff);
-                    temporaryElem.getDictionaryElem().setOffsetDoc(prevDocOff);
                 }
-                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * 68, DictionaryElem.size());
+                temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
+                temporaryElem.getDictionaryElem().setOffsetDoc(latestDocOff);
+                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.size(), DictionaryElem.size());
                 termNumber++;
-                System.out.println("QUI");
-                System.out.println(temporaryElem.getDictionaryElem().getTerm());
                 temporaryElem.getDictionaryElem().writeElemToDisk(vocBuffer);
-                //svuotare termblocklist e dictionaryElem
                 temporaryDocIds.clear();
                 temporaryFreqs.clear();
 
@@ -231,7 +226,7 @@ public class Merger {
         readBlock.getDictionaryElem().setOffsetFreq(long2);
         readBlock.getDictionaryElem().setLengthDoc(int3);
         readBlock.getDictionaryElem().setLengthFreq(int4);
-        readBlock.getDictionaryElem().printDebug();
+        //readBlock.getDictionaryElem().printDebug();
     }
 
     // method to read a line of docIds from a file and write it in the input list
