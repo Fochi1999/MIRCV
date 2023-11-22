@@ -155,7 +155,7 @@ public class SPIMI {
                 }
 
                 // update the length of the posting list in the dictionary
-                dictionaryElem.setLengthDoc(counter);
+                dictionaryElem.setLengthDocIds(counter);
                 dictionaryElem.setLengthFreq(counter);
                 dictionaryElem.writeElemToDisk(vocBuffer);
 

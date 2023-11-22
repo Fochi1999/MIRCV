@@ -21,7 +21,7 @@ public class termBlock {
         term.setCf(cf);
         term.setOffsetDoc(offsetDoc);
         term.setOffsetFreq(offsetFreq);
-        term.setLengthDoc(length);
+        term.setLengthDocIds(length);
         this.numBlock=numBlock;
     }
 
@@ -57,7 +57,7 @@ public class termBlock {
         this.term.setCf(t.getDictionaryElem().getCf());
         this.term.setOffsetDoc(t.getDictionaryElem().getOffsetDoc());
         this.term.setOffsetFreq(t.getDictionaryElem().getOffsetFreq());
-        this.term.setLengthDoc(t.getDictionaryElem().getLengthDoc());
+        this.term.setLengthDocIds(t.getDictionaryElem().getLengthDocIds());
         this.term.setLengthFreq(t.getDictionaryElem().getLengthFreq());
         this.numBlock=t.getNumBlock();
 

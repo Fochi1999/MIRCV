@@ -9,10 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -27,6 +25,7 @@ public class Merger {
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
     public static int num_blocks = 8;
      //public static int num_blocks = SPIMI.counterBlock;
+    //flag compression
     public static boolean compression=Global.compression;
 
 
@@ -118,7 +117,7 @@ public class Merger {
                 latestFreqOff = freqOff;
                 latestDocOff = docOff;
                 // the docIds and frequencies of the current term are read from the block where the term was found and added to the temporary lists
-                readLineFromDocId(docPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLengthDoc(), temporaryDocIds);
+                readLineFromDocId(docPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLengthDocIds(), temporaryDocIds);
                 readLineFromFreq(freqPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLengthFreq(), temporaryFreqs);
                 // if the block is not finished, the next vocabulary entry is read and added to the priority queue
                 if (!isEndOfFile(vocPointers.get(currentBlock.getNumBlock()))) {
@@ -133,10 +132,10 @@ public class Merger {
                     int blockNumber = currentBlock.getNumBlock();
                     temporaryElem.getDictionaryElem().setDf(temporaryElem.getDictionaryElem().getDf() + currentBlock.getDictionaryElem().getDf());
                     temporaryElem.getDictionaryElem().setCf(temporaryElem.getDictionaryElem().getCf() + currentBlock.getDictionaryElem().getCf());
-                    temporaryElem.getDictionaryElem().setLengthDoc(temporaryElem.getDictionaryElem().getLengthDoc() + currentBlock.getDictionaryElem().getLengthDoc());
-                    temporaryElem.getDictionaryElem().setLengthDoc(temporaryElem.getDictionaryElem().getLengthFreq() + currentBlock.getDictionaryElem().getLengthFreq());
-                    readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDoc(), temporaryDocIds);
-                    readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDoc(), temporaryFreqs);
+                    temporaryElem.getDictionaryElem().setLengthDocIds(temporaryElem.getDictionaryElem().getLengthDocIds() + currentBlock.getDictionaryElem().getLengthDocIds());
+                    temporaryElem.getDictionaryElem().setLengthDocIds(temporaryElem.getDictionaryElem().getLengthFreq() + currentBlock.getDictionaryElem().getLengthFreq());
+                    readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDocIds(), temporaryDocIds);
+                    readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDocIds(), temporaryFreqs);
 
                     if (isEndOfFile(vocPointers.get(blockNumber))) {
                         continue;
@@ -157,20 +156,20 @@ public class Merger {
                     docsBuffer.put(temporaryDocIdsBytes);
                     freqsBuffer.put(temporaryFreqsBytes);
                     //if compression is set lenght is the bytes size of their entry
-                    temporaryElem.getDictionaryElem().setLengthDoc(temporaryDocIdsBytes.length);
+                    temporaryElem.getDictionaryElem().setLengthDocIds(temporaryDocIdsBytes.length);
                     temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqsBytes.length);
 
                 } else {
-                    docOff += temporaryElem.getDictionaryElem().getLengthDoc() * 4;
-                    freqOff += temporaryElem.getDictionaryElem().getLengthDoc() * 4;
+                    docOff += temporaryElem.getDictionaryElem().getLengthDocIds() * 4;
+                    freqOff += temporaryElem.getDictionaryElem().getLengthDocIds() * 4;
                     docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, latestDocOff, temporaryDocIds.size() * 4);
                     freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestFreqOff, temporaryFreqs.size() * 4);
-                    for (int i = 0; i < temporaryElem.getDictionaryElem().getLengthDoc(); i++) {
+                    for (int i = 0; i < temporaryElem.getDictionaryElem().getLengthDocIds(); i++) {
                         docsBuffer.putInt(temporaryDocIds.get(i));
                         freqsBuffer.putInt(temporaryFreqs.get(i));
 
                     }
-                    temporaryElem.getDictionaryElem().setLengthDoc(temporaryDocIds.size());
+                    temporaryElem.getDictionaryElem().setLengthDocIds(temporaryDocIds.size());
                     temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqs.size());
                 }
                 temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
@@ -224,7 +223,7 @@ public class Merger {
         readBlock.getDictionaryElem().setCf(int2);
         readBlock.getDictionaryElem().setOffsetDoc(long1);
         readBlock.getDictionaryElem().setOffsetFreq(long2);
-        readBlock.getDictionaryElem().setLengthDoc(int3);
+        readBlock.getDictionaryElem().setLengthDocIds(int3);
         readBlock.getDictionaryElem().setLengthFreq(int4);
         //readBlock.getDictionaryElem().printDebug();
     }

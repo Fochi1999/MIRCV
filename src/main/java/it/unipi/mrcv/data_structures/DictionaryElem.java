@@ -17,7 +17,7 @@ public class DictionaryElem {
     // offset of the posting list containing frequencies
     private long offsetFreq;
     // length of the posting list
-    private int lengthDoc;
+    private int lengthDocIds;
 
     private int lengthFreq;
 
@@ -31,7 +31,7 @@ public class DictionaryElem {
         this.cf = 1;
         this.offsetDoc = 0;
         this.offsetFreq = 0;
-        this.lengthDoc = 0;
+        this.lengthDocIds = 0;
         this.lengthFreq = 0;
     };
 
@@ -52,8 +52,8 @@ public class DictionaryElem {
         this.offsetFreq = offsetFreq;
     };
 
-    public void setLengthDoc(int lengthDoc){
-        this.lengthDoc = lengthDoc;
+    public void setLengthDocIds(int lengthDocIds){
+        this.lengthDocIds = lengthDocIds;
     };
 
     public void setLengthFreq(int lengthFreq){
@@ -85,8 +85,8 @@ public class DictionaryElem {
         return this.offsetFreq;
     };
 
-    public int getLengthDoc(){
-        return this.lengthDoc;
+    public int getLengthDocIds(){
+        return this.lengthDocIds;
     };
     public int getLengthFreq(){
         return this.lengthFreq;
@@ -121,7 +121,7 @@ public class DictionaryElem {
         vocBuffer.putInt(cf);
         vocBuffer.putLong(offsetDoc);
         vocBuffer.putLong(offsetFreq);
-        vocBuffer.putInt(lengthDoc);
+        vocBuffer.putInt(lengthDocIds);
         vocBuffer.putInt(lengthFreq);
 
     }
@@ -130,7 +130,7 @@ public class DictionaryElem {
         System.out.println("DEBUG:");
         System.out.println("term: "+term);
         System.out.println("df: "+df);
-        System.out.println("docLength: "+lengthDoc);
+        System.out.println("docLength: "+ lengthDocIds);
         System.out.println("freqLength: "+lengthFreq);
     }
 }
