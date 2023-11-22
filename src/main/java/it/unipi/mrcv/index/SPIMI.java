@@ -1,5 +1,6 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
 import it.unipi.mrcv.preprocess.preprocess;
@@ -152,6 +153,10 @@ public class SPIMI {
                     freqsBuffer.putInt(posting.getFrequency());
                     postingCounter++;
                 }
+                dictionaryElem.setLengthDoc(counter);
+                //allocate char buffer to write term
+                dictionaryElem.writeElemToDisk(vocBuffer);
+
                 // update the length of the posting list in the dictionary
                 dictionaryElem.setLength(postingCounter);
 
@@ -182,6 +187,7 @@ public class SPIMI {
                 vocBuffer.putLong(dictionaryElem.getOffsetFreq());
                 vocBuffer.putInt(dictionaryElem.getLength());
 
+
             }
         }
 
@@ -199,6 +205,32 @@ public class SPIMI {
         postingLists = new InvertedIndex();
         // reset the number of postings
         numPosting = 0;
+    }
+    private static void writeToDiskCompressed() throws IOException, InterruptedException {
+        try (
+                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixDocFiles + counterBlock),
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.CREATE
+                );
+                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixFreqFiles + counterBlock),
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.CREATE);
+                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixVocFiles + counterBlock),
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.CREATE)
+        ) {
+            // instantiation of MappedByteBuffer for integer list of docids
+            MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
+            // instantiation of MappedByteBuffer for integer list of freqs
+            MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
+            //TODO: allocare la memoria giusta per il vocabulary
+
+            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
+        }
+
     }
 
     // function that reads the docIds file OR the freqs file and prints them
@@ -227,7 +259,66 @@ public class SPIMI {
         }
     }
 
-    // function that reads the vocabulary file and prints the terms and the statistics
+
+
+    public static void readCompressedDic(String path,String path2){
+        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
+                StandardOpenOption.READ)) {
+
+            // Size for each term in bytes
+            int termSize = 40;
+            // Sizes for the other integers and longs
+            int intSize = Integer.BYTES; // 4 bytes
+            int longSize = Long.BYTES;   // 8 bytes
+            // Total size of one dictionary entry
+            int entrySize = termSize + 2 * intSize + 2 * longSize + intSize;
+
+            ByteBuffer buffer = ByteBuffer.allocate(entrySize);
+
+            while (vocFchan.read(buffer) != -1) {
+                buffer.flip(); // Prepare the buffer for reading
+
+                if (buffer.remaining() >= entrySize) {
+                    // Read term
+                    byte[] termBytes = new byte[termSize];
+                    buffer.get(termBytes);
+                    String term = decodeTerm(termBytes);
+
+                    // Read statistics
+                    int df = buffer.getInt();
+                    int cf = buffer.getInt();
+                    long offsetDoc = buffer.getLong();
+                    long offsetFreq = buffer.getLong();
+                    int lengthDoc = buffer.getInt();
+                    int lengthFreq = buffer.getInt();
+
+                    // Print the details
+                    System.out.println("Term: " + term);
+                    System.out.println("Document Frequency (df): " + df);
+                    System.out.println("Collection Frequency (cf): " + cf);
+                    System.out.println("Offset Doc: " + offsetDoc);
+                    System.out.println("Offset Freq: " + offsetFreq);
+                    System.out.println("Length: " + lengthDoc);
+                    System.out.print("DocIds: ");
+                    readFromCompressedDocIds(path2,lengthDoc,(int)offsetDoc);
+                    System.out.println("");
+                    System.out.print("Frequencies: ");
+                    //readFromCompressedDocIds(path3,length,(int)offsetFreq);
+                    System.out.println("-------------------------");
+                } else {
+                    // Not enough data for a full dictionary entry, handle partial read or end of file
+                    System.err.println("Partial read or end of file reached. Exiting.");
+                    break;
+                }
+
+                buffer.clear(); // Clear the buffer for the next read
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public static void readDictionary(String path) {
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
@@ -274,6 +365,21 @@ public class SPIMI {
 
                 buffer.clear(); // Clear the buffer for the next read
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void readFromCompressedDocIds(String path,int length,long offset){
+        try{
+            RandomAccessFile raf=new RandomAccessFile(new File(path),"r");
+            byte[] b=new byte[length];
+            raf.seek(offset);
+            raf.read(b);
+            ArrayList<Long> ret=VariableByte.fromByteToArrayLong(b);
+            for(long x: ret){
+                System.out.print(x+" ");
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }

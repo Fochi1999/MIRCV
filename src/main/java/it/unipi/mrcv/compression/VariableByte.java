@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import static java.lang.Math.log;
 
 public class VariableByte {
-    public static byte[] fromLongToVarByte(long input){
+    public static byte[] fromLongToVarByte(long input){ //the bit of control is the first one, its 1 if its the last byte, 0 otherwise
         byte[] ret;
         if(input==0){
             ret=new byte[]{0};
@@ -29,17 +29,48 @@ public class VariableByte {
             }
         }
         for (byte b : bytes) {
-            if(b<128){
-                ret=ret*128+b;
-            }
-            else{
-                ret=ret*128+(b-128);
-            }
+            ret=ret*128+b;
         }
         ret=ret+128;
         return ret;
+    }
+    public static byte[] fromArrayLongToVarByte(ArrayList<Long> input){
+        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
+        for (Long number : input)
+            buf.put(fromLongToVarByte(number));
 
+        buf.flip();
+        byte[] ret = new byte[buf.remaining()];
+        buf.get(ret);
 
+        return ret;
+    }
+    public static byte[] fromArrayIntToVarByte(ArrayList<Integer> input){
+        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
+        for (int number : input)
+            buf.put(fromLongToVarByte(number));
+
+        buf.flip();
+        byte[] ret = new byte[buf.remaining()];
+        buf.get(ret);
+
+        return ret;
+    }
+    public static ArrayList<Long> fromByteToArrayLong(byte[] bytes){
+        ArrayList<Long> numbers = new ArrayList<>();
+        long n = 0;
+
+        for (byte b : bytes) {
+            if ((b & 0xff) < 128) {
+                n = 128 * n + b;
+            } else {
+                long num = (128 * n + ((b - 128) & 0xff));
+                numbers.add(num);
+                n = 0;
+            }
+        }
+
+        return numbers;
     }
 
 }
