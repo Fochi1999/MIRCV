@@ -117,34 +117,9 @@ public class SPIMI {
                     freqsBuffer.putInt(posting.getFrequency());
                     counter++;
                 }
-                dictionaryElem.setLength(counter);
+                dictionaryElem.setLengthDoc(counter);
                 //allocate char buffer to write term
-                CharBuffer charBuffer = CharBuffer.allocate(40); //TODO: verificare la size
-                String term = dictionaryElem.getTerm();
-                //populate char buffer char by char
-                for (int i = 0; i < term.length() && i < 40; i++)
-                    charBuffer.put(i, term.charAt(i));
-
-                // Write the term into file
-                ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
-                // Encode the CharBuffer into a ByteBuffer
-                ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
-                // Ensure the buffer is at the start before reading from it
-                encodedBuffer.rewind();
-                // Transfer bytes to the new buffer
-                for (int i = 0; i < 40; i++) {
-                    truncatedBuffer.put(encodedBuffer.get(i));
-                }
-
-                truncatedBuffer.rewind();
-                vocBuffer.put(truncatedBuffer);
-
-                // write statistics
-                vocBuffer.putInt(dictionaryElem.getDf());
-                vocBuffer.putInt(dictionaryElem.getCf());
-                vocBuffer.putLong(dictionaryElem.getOffsetDoc());
-                vocBuffer.putLong(dictionaryElem.getOffsetFreq());
-                vocBuffer.putInt(dictionaryElem.getLength());
+                dictionaryElem.writeElemToDisk(vocBuffer);
 
             }
         }
@@ -240,7 +215,8 @@ public class SPIMI {
                     int cf = buffer.getInt();
                     long offsetDoc = buffer.getLong();
                     long offsetFreq = buffer.getLong();
-                    int length = buffer.getInt();
+                    int lengthDoc = buffer.getInt();
+                    int lengthFreq = buffer.getInt();
 
                     // Print the details
                     System.out.println("Term: " + term);
@@ -248,12 +224,12 @@ public class SPIMI {
                     System.out.println("Collection Frequency (cf): " + cf);
                     System.out.println("Offset Doc: " + offsetDoc);
                     System.out.println("Offset Freq: " + offsetFreq);
-                    System.out.println("Length: " + length);
+                    System.out.println("Length: " + lengthDoc);
                     System.out.print("DocIds: ");
-                    readFromCompressedDocIds(path2,length,(int)offsetDoc);
+                    readFromCompressedDocIds(path2,lengthDoc,(int)offsetDoc);
                     System.out.println("");
                     System.out.print("Frequencies: ");
-                    readFromCompressedDocIds(path3,length,(int)offsetFreq);
+                    //readFromCompressedDocIds(path3,length,(int)offsetFreq);
                     System.out.println("-------------------------");
                 } else {
                     // Not enough data for a full dictionary entry, handle partial read or end of file

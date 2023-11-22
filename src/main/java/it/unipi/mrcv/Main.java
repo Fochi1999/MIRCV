@@ -13,11 +13,11 @@ import java.util.ArrayList;
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-       /* SPIMI.exeSPIMI("collection.tsv");
-       */
+        SPIMI.exeSPIMI("reduced collection.tsv");
 
-        //Merger.Merge();
-        SPIMI.readCompressedDic("vocabulary","docids");
+
+        Merger.Merge();
+        //SPIMI.readCompressedDic("vocabulary","docids");
         //SPIMI.readIndex("frequencies");
 
 /*
