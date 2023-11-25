@@ -1,4 +1,4 @@
-package it.unipi.mrcv.query_processing;
+package it.unipi.mrcv.query_processing.document_score;
 
 public class DocumentScore {
 

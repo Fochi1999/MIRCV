@@ -4,10 +4,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostingList {
-    private List<Posting> postings;
+    private String term;
+    private final ArrayList<Posting> postings;
+
+    /* Term Upper Bound for TF-IDF */
+    private double maxTFIDF;
+
+    /* Term Upper Bound for BM25 */
+    private double maxBM25;
+
 
     public PostingList() {
-        postings = new ArrayList<>();
+        this.term = " ";
+        this.postings = new ArrayList<>();
+        this.actualPosting = null;
+    }
+
+    public PostingList(String term) {
+        this.term = term;
+        this.postings = new ArrayList<>();
+    }
+
+    public PostingList(String term, Posting p) {
+        this.term = term;
+        this.postings = new ArrayList<>();
+        this.postings.add(p);
     }
 
     public void addPosting(Posting posting) {
@@ -20,6 +41,20 @@ public class PostingList {
 
     public int size() {
         return postings.size();
+    }
+
+    public void setTerm(String term) {
+        this.term = term;
+    }
+    public String getTerm() {
+        return term;
+    }
+    public void printPostingList() {
+
+        System.out.println("Posting List:");
+        for (Posting p : this.getPl()) {
+            System.out.printf("Docid: %d - Freq: %d\n", Posting.getDocid(), Posting.getFrequency());
+        }
     }
 
     // You can add more methods as needed for manipulating the posting list

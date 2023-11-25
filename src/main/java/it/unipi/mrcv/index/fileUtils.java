@@ -2,6 +2,7 @@ package it.unipi.mrcv.index;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.RandomAccessFile;
 
 public class fileUtils {
     public static final String prefixDocFiles="doc_";
@@ -10,6 +11,8 @@ public class fileUtils {
     public static final String finalVoc="vocabulary";
     public static final String finalDoc="docIds";
     public static final String finalFreq="frequencies";
+    public static RandomAccessFile CollectionInfo_raf;
+
     public static void deleteTempFiles(){
         final File folder =new File("./");
         final File[] files = folder.listFiles( new FilenameFilter() {

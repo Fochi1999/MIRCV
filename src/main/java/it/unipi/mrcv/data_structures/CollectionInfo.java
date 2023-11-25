@@ -1,6 +1,7 @@
 package it.unipi.mrcv.data_structures;
-
-public class Collection {
+import java.nio.ByteBuffer;
+import java.io.*;
+public class CollectionInfo {
     /* Total number of docIDs present in the collection */
     private static long docid_counter = 0;
 
