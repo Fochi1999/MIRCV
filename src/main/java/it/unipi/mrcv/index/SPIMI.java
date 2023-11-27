@@ -18,6 +18,9 @@ import java.util.*;
 
 public class SPIMI {
     public static int counterBlock = 0;
+    private static final int TERM_SIZE = 40;
+    private static final int INT_SIZE = Integer.BYTES;
+    private static final int LONG_SIZE = Long.BYTES;
     public static int numPosting = 0;
     public static Dictionary dictionary = new Dictionary();
     /* Posting list of a term in memory */

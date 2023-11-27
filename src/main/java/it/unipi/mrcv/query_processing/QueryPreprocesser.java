@@ -1,10 +1,12 @@
 package it.unipi.mrcv.query_processing;
 
+import it.unipi.mrcv.data_structures.Flags;
 import it.unipi.mrcv.data_structures.PostingList;
 import it.unipi.mrcv.query_processing.document_score.DocumentScore;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class QueryPreprocesser {
     public static ArrayList<PostingList> plQueryTerm = new ArrayList<>();
@@ -31,96 +33,104 @@ public class QueryPreprocesser {
      * @throws IOException if the channel is not found
      */
 
-    public static void executeQueryProcesser(ArrayList<String> tokens, int k) throws IOException {
+    public class executeQueryPreprocesser {
 
-        int pos = 0;
+        private static ArrayList<PostingList> plQueryTerm = new ArrayList<>();
+        private static ArrayList<PostingList> orderedPlQueryTerm = new ArrayList<>();
+        private static HashMap<Integer, Double> hm_PosScore = new HashMap<>();
+        private static ArrayList<Double> orderedMaxScore;
+        private static HashMap<Integer, Integer> hm_PosLen = new HashMap<>();
 
-        for (String t: tokens) {
+        /**
+         * Function that allows executing the processing of the query
+         *
+         * @param tokens the tokens of the query
+         * @throws IOException if the channel is not found
+         */
+        public static void executeQueryProcesser(ArrayList<String> tokens, int k) throws IOException {
+            int pos = 0;
 
-            PostingList pl = new PostingList();
-            pl.getPl().clear();
-            pl.setTerm(t);
+            for (String t : tokens) {
+                PostingList pl = new PostingList();
+                pl.getPl().clear();
+                pl.setTerm(t);
+                pl.obtainPostingList(t);
 
-            pl.obtainPostingList(t);
+                if (!pl.getPl().isEmpty()) {
+                    plQueryTerm.add(pl);
 
-            if (pl.getPl().size() == 0 || pl.getPl()==null){
-                /* The term is not present in the dictionary */
-                continue;
+                    if (Flags.isMaxScore_flag()) {
+                        hm_PosScore.put(pos, Flags.isScoreMode() ? pl.getMaxBM25() : pl.getMaxTFIDF());
+                    }
+
+                    hm_PosLen.put(pos, pl.getPl().size());
+                    pos++;
+                }
             }
 
-            plQueryTerm.add(pl);
-
-            if (Flags.isMaxScore_flag()) {
-                if (Flags.isScoreMode())
-                    hm_PosScore.put(pos, pl.getMaxBM25());
-                else
-                    hm_PosScore.put(pos, pl.getMaxTFIDF());
+            if (plQueryTerm.isEmpty()) {
+                System.out.println("(INFO) All the query words are not present in the Dictionary");
+                return;
             }
 
-            hm_PosLen.put(pos, pl.getPl().size());
-            pos++;
+            PriorityQueue<DocumentScore> pQueueResult = Flags.isQueryMode()
+                    ? ConjunctiveQuery.executeConjunctiveQuery(k)
+                    : (Flags.isMaxScore_flag() ? executeMaxScore(k) : executeDAAT(k));
+
+            displayTopDocuments(pQueueResult, k);
+
+            clearDataStructures();
         }
 
-        PriorityQueue<DocumentScore> pQueueResult;
+        private static void displayTopDocuments(PriorityQueue<DocumentScore> pQueueResult, int k) {
+            int rank = 1;
 
-        if(plQueryTerm == null || plQueryTerm.size() == 0){
-            System.out.println("(INFO) All the query words are not present in the Dictionary");
-            return;
-        }
+            System.out.println("\n*** TOP " + k + " DOCUMENTS RETRIEVED ***\n");
 
-        if (Flags.isQueryMode()){
+            String leftAlignFormat = "\t| %-15d | %-4s |%n";
 
-            pQueueResult = ConjunctiveQuery.executeConjunctiveQuery(k);
-        }else {
-            if (Flags.isMaxScore_flag()) {
+            System.out.format("\t+-----------------+-------+%n");
+            System.out.format("\t|  Document       | Score |%n");
+            System.out.format("\t+-----------------+-------+%n");
 
-                /* Sorting posting list by score */
-                hm_PosScore = (HashMap<Integer, Double>) sortByValue(hm_PosScore);
-
-                for (Map.Entry<Integer, Double> entry : hm_PosScore.entrySet())
-                    orderedPlQueryTerm.add(plQueryTerm.get(entry.getKey()));
-
-                orderedMaxScore = new ArrayList<>(hm_PosScore.values());
-
-                pQueueResult = executeMaxScore(k);
-            }else {
-                pQueueResult = executeDAAT(k);
+            while (!pQueueResult.isEmpty() && rank != (k + 1)) {
+                DocumentScore d = pQueueResult.poll();
+                if (d.getScore() != 0) {
+                    System.out.format(leftAlignFormat, d.getDocid(), String.format("%.3f", d.getScore()));
+                }
+                rank++;
             }
+
+            System.out.format("\t+-----------------+-------+%n");
         }
 
-        int rank = 1;
-
-        System.out.println("\n*** TOP " + k + " DOCUMENTS RETRIEVED ***\n");
-
-        String leftAlignFormat = "\t| %-15d | %-4s |%n";
-
-        System.out.format("\t+-----------------+-------+%n");
-        System.out.format("\t|  Document       | Score |%n");
-        System.out.format("\t+-----------------+-------+%n");
-
-        while (pQueueResult.size() != 0 && rank != (k + 1)) {
-            DocumentScore d = pQueueResult.poll();
-            if (d.getScore() != 0)
-                System.out.format(leftAlignFormat, d.getDocid(), String.format("%.3f", d.getScore()));
-            rank++;
+        private static void clearDataStructures() {
+            orderedMaxScore = null;
+            orderedPlQueryTerm = null;
+            plQueryTerm = null;
+            hm_PosScore = null;
+            hm_PosLen = null;
         }
-        System.out.format("\t+-----------------+-------+%n");
 
-        if (orderedMaxScore != null)
-            orderedMaxScore.clear();
+        private static PriorityQueue<DocumentScore> executeMaxScore(int k) {
+            orderedPlQueryTerm = plQueryTerm.stream()
+                    .sorted(Comparator.comparingDouble(pl -> hm_PosScore.get(plQueryTerm.indexOf(pl))))
+                    .collect(Collectors.toCollection(ArrayList::new));
 
-        if (orderedPlQueryTerm != null)
-            orderedPlQueryTerm.clear();
+            orderedMaxScore = new ArrayList<>(hm_PosScore.values());
 
-        if (plQueryTerm != null)
-            plQueryTerm.clear();
+            return executeMaxScoreAlgorithm(k);
+        }
 
-        if (hm_PosScore != null)
-            hm_PosScore.clear();
+        private static PriorityQueue<DocumentScore> executeMaxScoreAlgorithm(int k) {
+            PriorityQueue<DocumentScore> maxHeap = new PriorityQueue<>(k, Collections.reverseOrder());
 
-        if (hm_PosLen != null)
-            hm_PosLen.clear();
+            // Implement the MaxScore algorithm here
 
-        pQueueResult.clear();
+            return maxHeap;
+        }
+
+
     }
+
 }

@@ -1,5 +1,6 @@
 package it.unipi.mrcv.query_processing;
 import it.unipi.mrcv.data_structures.CollectionInfo;
+import it.unipi.mrcv.data_structures.Flags;
 import it.unipi.mrcv.data_structures.PostingList;
 import it.unipi.mrcv.query_processing.document_score.DocumentScore;
 import it.unipi.mrcv.query_processing.document_score.IncComparatorScore;
@@ -54,8 +55,7 @@ public class MaxScore {
      * @param docUpperBounds   The array of document upper bounds.
      * @return The calculated score for the document.
      */
-    private static double calculateScoreForDocument(List<PostingList> plQueryTerm, long currentDocId,
-                                                    double[] termUpperBounds, long[] docUpperBounds) {
+    private static double calculateScoreForDocument(List<PostingList> plQueryTerm, long currentDocId, double[] termUpperBounds, long[] docUpperBounds) {
         double score = 0;
 
         for (int i = 0; i < plQueryTerm.size(); i++) {
@@ -79,6 +79,28 @@ public class MaxScore {
         }
 
         return score;
+    }
+
+    private static long calculateDocUpperBound(PostingList postingList, long docUpperBound) {
+        // Assume a simple linear function for demonstration purposes
+        Merger.getMaxFreq();
+
+        // Your specific calculation logic may vary
+        long newDocUpperBound = currentDocUpperBound + (totalDocumentCount - documentFrequency) / (maxDocumentFrequency - documentFrequency + 1);
+
+        return newDocUpperBound;
+    }
+
+    private static double calculateTermUpperBound(PostingList postingList, double termUpperBound) {
+        // Assume a simple linear function for demonstration purposes
+        double termFrequency = postingList.getActualPosting().getFrequency();
+        double documentFrequency = postingList.getDocumentFrequency();
+        double avgDocumentLength = postingList.getAverageDocumentLength();
+
+        // Your specific calculation logic may vary
+        double newTermUpperBound = currentTermUpperBound + 0.1 * termFrequency * Math.log(1 + avgDocumentLength / documentFrequency);
+
+        return newTermUpperBound;
     }
 
     /**
