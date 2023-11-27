@@ -46,11 +46,16 @@ public class PostingList {
     public void setTerm(String term) {
         this.term = term;
     }
+
     public String getTerm() {
         return term;
     }
-    public void printPostingList() {
 
+    public ArrayList<Posting> getPl() {
+        return postings;
+    }
+
+    public void printPostingList() {
         System.out.println("Posting List:");
         for (Posting p : this.getPl()) {
             System.out.printf("Docid: %d - Freq: %d\n", Posting.getDocid(), Posting.getFrequency());
