@@ -17,17 +17,15 @@ public class Global {
     public static final String finalFreqCompressed="frequenciesCompressed";
     public static final String finalStopWordsFile="stopwords-en.txt";
     public static boolean compression=true;
-    public static boolean stem=true;
-    public static boolean stopWords=true;
+    public static boolean stem=false;
+    public static boolean stopWords=false;
 
     public static List<String> stopWordsList;
 
     public static void load(){
         try {
             stopWordsList=Files.readAllLines(Paths.get(finalStopWordsFile));
-            for(String x:stopWordsList){
-                System.out.println(x);
-            }
+
         } catch (IOException e) {
             System.out.println("can't read Stopword file, flag stopwords set to false");
             stopWords=false;

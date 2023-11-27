@@ -1,5 +1,6 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.compression.Unary;
 import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
@@ -283,23 +284,23 @@ public class SPIMI {
 
                     // Print the details
                     System.out.println("Term: " + term);
-                    /*System.out.println("Document Frequency (df): " + df);
+                    System.out.println("Document Frequency (df): " + df);
                     System.out.println("Collection Frequency (cf): " + cf);
                     System.out.println("Offset Doc: " + offsetDoc);
                     System.out.println("Offset Freq: " + offsetFreq);
                     System.out.println("LengthDoc: " + lengthDoc);
-                    System.out.println("LengthFreq: " + lengthFreq);*/
+                    System.out.println("LengthFreq: " + lengthFreq);
                     if(docids) {
                         System.out.print("DocIds: ");
-                        readFromCompressedDocIds(path2, lengthDoc, (int) offsetDoc);
+                        readFromCompressedDocIds(path2, lengthDoc,  offsetDoc);
                         System.out.println("");
                     }
                     if(freq){
                         System.out.print("Frequencies: ");
-                        readFromCompressedDocIds(path3,lengthFreq,(int)offsetFreq);
+                        readFromCompressedFrequencies(path3,lengthFreq,offsetFreq);
                     }
 
-                    //System.out.println("-------------------------");
+                    System.out.println("-------------------------");
                 } else {
                     // Not enough data for a full dictionary entry, handle partial read or end of file
                     System.err.println("Partial read or end of file reached. Exiting.");
@@ -312,6 +313,22 @@ public class SPIMI {
             e.printStackTrace();
         }
 
+    }
+
+    private static void readFromCompressedFrequencies(String path3, int lengthFreq, long offsetFreq) {
+        try{
+            RandomAccessFile raf=new RandomAccessFile(new File(path3),"r");
+            byte[] b=new byte[lengthFreq];
+            raf.seek(offsetFreq);
+            raf.read(b);
+            ArrayList<Integer> ret= Unary.unaryToArrayInt(b);
+            for(int x: ret){
+                System.out.print(x+" ");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void readDictionary(String path) {
@@ -372,8 +389,8 @@ public class SPIMI {
             byte[] b=new byte[length];
             raf.seek(offset);
             raf.read(b);
-            ArrayList<Long> ret=VariableByte.fromByteToArrayLong(b);
-            for(long x: ret){
+            ArrayList<Integer> ret=VariableByte.fromByteToArrayInt(b);
+            for(int x: ret){
                 System.out.print(x+" ");
             }
 
