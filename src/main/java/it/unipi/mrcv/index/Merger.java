@@ -9,10 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -25,9 +23,8 @@ public class Merger {
 
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
-    public static int num_blocks = 8;
-     //public static int num_blocks = SPIMI.counterBlock;
-    public static boolean compression=Global.compression;
+    public static int num_blocks = SPIMI.counterBlock;
+    public static boolean compression = Global.compression;
 
 
     public static void Merge() throws IOException {
@@ -60,7 +57,7 @@ public class Merger {
         List<RandomAccessFile> vocPointers = new ArrayList<>();
         // pQueue is the priority queue used to store the vocabulary entries
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
-        //if flag compression is set on false change files names
+        // if flag compression is set on false change files names
         String pathDocs= !Global.compression?Global.finalDoc:Global.finalDocCompressed;
         String pathFreqs= !Global.compression?Global.finalFreq:Global.finalFreqCompressed;
         String pathVoc= !Global.compression?Global.finalVoc:Global.finalVocCompressed;
@@ -145,7 +142,7 @@ public class Merger {
                     pQueue.add(pQueueElems.get(blockNumber));
                 }
 
-                //if compression is active use VariableByte to compress docids and Unary to compress frequencies
+                // if compression is active use VariableByte to compress docids and Unary to compress frequencies
                 if(compression==true){
                     byte[] temporaryDocIdsBytes = VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);
                     byte[] temporaryFreqsBytes = Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs);
@@ -156,7 +153,7 @@ public class Merger {
                     freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestFreqOff, temporaryFreqsBytes.length);
                     docsBuffer.put(temporaryDocIdsBytes);
                     freqsBuffer.put(temporaryFreqsBytes);
-                    //if compression is set lenght is the bytes size of their entry
+                    //if compression is set lenght is the bytes SPIMIsize of their entry
                     temporaryElem.getDictionaryElem().setLengthDoc(temporaryDocIdsBytes.length);
                     temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqsBytes.length);
 
@@ -173,9 +170,13 @@ public class Merger {
                     temporaryElem.getDictionaryElem().setLengthDoc(temporaryDocIds.size());
                     temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqs.size());
                 }
+
+                // implement skipping
+
+
                 temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
                 temporaryElem.getDictionaryElem().setOffsetDoc(latestDocOff);
-                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.size(), DictionaryElem.size());
+                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.SPIMIsize(), DictionaryElem.SPIMIsize());
                 termNumber++;
                 temporaryElem.getDictionaryElem().writeElemToDisk(vocBuffer);
                 temporaryDocIds.clear();
@@ -193,7 +194,7 @@ public class Merger {
     // method to read an entry from a vocabulary using the input array for the term and writing the entry in the input termBlock
     public static void readEntryFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
         // Read 40 bytes into a byte array
-        ByteBuffer vocBuffer = ByteBuffer.allocate(DictionaryElem.size());
+        ByteBuffer vocBuffer = ByteBuffer.allocate(DictionaryElem.SPIMIsize());
         while (vocBuffer.hasRemaining()) {
             raf.getChannel().read(vocBuffer);
         }

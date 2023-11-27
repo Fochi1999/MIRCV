@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.charset.StandardCharsets;
+import static it.unipi.mrcv.index.fileUtils.collectionLength;
 
 public class DictionaryElem {
     // term
@@ -16,10 +17,27 @@ public class DictionaryElem {
     private long offsetDoc;
     // offset of the posting list containing frequencies
     private long offsetFreq;
-    // length of the posting list
+    // length of the posting list (docIds)
     private int lengthDoc;
-
+    // length of the posting list (frequencies)
     private int lengthFreq;
+    // max term frequency
+    private int maxTF;
+
+    // offset of the skipping information
+    private long offsetSkip;
+
+    // length of the skipping information
+    private int skipLen;
+
+    // inverse document frequency
+    private double idf;
+
+    /* Term upper bound for TF-IDF */
+    private double maxTFIDF;
+
+    /* Term upper bound for BM25 */
+    private double maxBM25;
 
     // default constructor
     public DictionaryElem(){
@@ -33,6 +51,9 @@ public class DictionaryElem {
         this.offsetFreq = 0;
         this.lengthDoc = 0;
         this.lengthFreq = 0;
+        this.maxTF = 0;
+        this.offsetSkip = 0;
+        this.skipLen = 0;
     };
 
     // set methods
@@ -64,6 +85,41 @@ public class DictionaryElem {
         this.term = term;
     };
 
+    public void setMaxTF(int maxTF){
+        this.maxTF = maxTF;
+    };
+
+    public void setOffsetSkip(long offsetSkip){
+        this.offsetSkip = offsetSkip;
+    };
+
+    public void setSkipLen(int skipLen){
+        this.skipLen = skipLen;
+    };
+
+    public void setIdf() {
+        this.idf = Math.log10(collectionLength / (double)this.df);
+    }
+
+    public void setMaxTFIDF() {
+        this.maxTFIDF = (1 + Math.log10(this.maxTF)) * this.idf;
+    }
+
+    public void setMaxBM25(double maxBM25) { this.maxBM25 = maxBM25; }
+
+/*    public void updateMaxBM25(PostingList pl) {
+        double current_BM25;
+
+        for (Posting p: pl.getPostings()) {
+            current_BM25 = (p.getFrequency() /
+                    ((1 - 0.75) + 0.75 * (SPIMI.DocsLen.get((int) (p.getDocID()-1)) / SPIMI.avdl)
+                            + p.getFrequency()))*this.idf;
+
+            if (current_BM25 > this.getMaxBM25())
+                this.setMaxBM25(current_BM25);
+        }
+    }*/
+
     // get methods
     public String getTerm(){
         return this.term;
@@ -88,12 +144,31 @@ public class DictionaryElem {
     public int getLengthDoc(){
         return this.lengthDoc;
     };
+
     public int getLengthFreq(){
         return this.lengthFreq;
     };
 
+    public int getMaxTF(){
+        return this.maxTF;
+    };
+
+    public long getOffsetSkip(){
+        return this.offsetSkip;
+    };
+
+    public int getSkipLen(){
+        return this.skipLen;
+    };
+
+    public double getMaxBM25() { return maxBM25; }
+
+    public static int SPIMIsize(){
+        return 72; // size of everything needed for the SPIMI algorithm
+    }
+
     public static int size(){
-        return 72; //size of everything in the class
+        return 88; // size of everything in the class
     }
 
     public void writeElemToDisk(MappedByteBuffer vocBuffer){

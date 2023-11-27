@@ -45,7 +45,7 @@ public class preprocess {
     }
 
     public static String removePuntuaction(String text){
-        String result = text.replaceAll("\\p{Punct}", "");
+        String result = text.replaceAll("\\p{Punct}", " ");
         return result;
     }
 

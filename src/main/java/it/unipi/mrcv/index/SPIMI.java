@@ -4,6 +4,7 @@ import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
 import it.unipi.mrcv.preprocess.preprocess;
+import static it.unipi.mrcv.index.fileUtils.collectionLength;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -26,8 +27,8 @@ public class SPIMI {
     public static Dictionary dictionary = new Dictionary();
     // Posting Lists in memory
     public static InvertedIndex postingLists = new InvertedIndex();
-    // allocate memory for the docIndex file; this is a magic number, it is more than enough for one block worth of docIdex
-    public static ByteBuffer docIndexBuffer = ByteBuffer.allocateDirect(1024 * 1024 * 30);
+    // list that stores the docIndex
+    public static List<Integer> docIndexList = new ArrayList<>();
 
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
         // Max memory usable by the JVM
@@ -40,11 +41,15 @@ public class SPIMI {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
         // read the first line
         String line = reader.readLine();
+        // increase the stored collection length
+        collectionLength++;
 
         // read the document collection line by line and execute the SPIMI algorithm
         while (line != null) {
+            // increase the stored collection length
+            collectionLength++;
 
-            //split the line in two parts: the first is the document number, the second is the text
+            // split the line in two parts: the first is the document number, the second is the text
             String[] parts = line.split("\t", 2);
             try {
                 documentNumber = Integer.parseInt(parts[0]);
@@ -55,10 +60,10 @@ public class SPIMI {
 
             // preprocess the line and obtain the tokens
             List<String> tokens = preprocess.all(parts[1]);
-            // write the docId, the document number and the document length in the docIndex buffer
-            docIndexBuffer.putInt(docId);
-            docIndexBuffer.putInt(documentNumber);
-            docIndexBuffer.putInt(tokens.size());
+            // write the docId, the document number and the document length in the docIndexList
+            docIndexList.add(docId);
+            docIndexList.add(documentNumber);
+            docIndexList.add(tokens.size());
 
             // for each term in the line create/update posting lists and dictionary
             for (String term : tokens) {
@@ -125,19 +130,20 @@ public class SPIMI {
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)
         ) {
-            // writing the docIndex buffer to file
-            docIndexBuffer.flip();
-            // Write the contents of the buffer to the file
-            while (docIndexBuffer.hasRemaining()) {
-                docIndexFchan.write(docIndexBuffer);
-            }
 
+            // instantiation of MappedByteBuffer for integer list of docIndex
+            MappedByteBuffer docIndexBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, docIndexList.size() * 4);
             // instantiation of MappedByteBuffer for integer list of docids
             MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for integer list of freqs
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for vocabulary
             MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
+
+            // write the docIndexList on disk by appending on the docIndex file
+            for (int i = 0; i < docIndexList.size(); i++) {
+                docIndexBuffer.putInt(docIndexList.get(i));
+            }
 
             // for each term in the term-postingList treemap write everything to file
             for (Map.Entry<String, PostingList>
@@ -168,7 +174,7 @@ public class SPIMI {
         // clear the memory
         postingLists.clear();
         dictionary.clear();
-        docIndexBuffer.clear();
+        docIndexList.clear();
         // hope that the garbage collector will free the memory
         System.gc();
         Thread.sleep(1500);
@@ -178,32 +184,7 @@ public class SPIMI {
         // reset the number of postings
         numPosting = 0;
     }
-    private static void writeToDiskCompressed() throws IOException, InterruptedException {
-        try (
-                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixDocFiles + counterBlock),
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.READ,
-                        StandardOpenOption.CREATE
-                );
-                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixFreqFiles + counterBlock),
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.READ,
-                        StandardOpenOption.CREATE);
-                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixVocFiles + counterBlock),
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.READ,
-                        StandardOpenOption.CREATE)
-        ) {
-            // instantiation of MappedByteBuffer for integer list of docids
-            MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
-            // instantiation of MappedByteBuffer for integer list of freqs
-            MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
-            //TODO: allocare la memoria giusta per il vocabulary
 
-            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
-        }
-
-    }
 
     // function that reads the docIds file OR the freqs file and prints them
     public static void readIndex(String path) {
@@ -242,7 +223,7 @@ public class SPIMI {
             // Sizes for the other integers and longs
             int intSize = Integer.BYTES; // 4 bytes
             int longSize = Long.BYTES;   // 8 bytes
-            // Total size of one dictionary entry
+            // Total SPIMIsize of one dictionary entry
             int entrySize = termSize + 4 * intSize + 2 * longSize;
 
             ByteBuffer buffer = ByteBuffer.allocate(entrySize);
@@ -301,7 +282,7 @@ public class SPIMI {
             // Sizes for the other integers and longs
             int intSize = Integer.BYTES; // 4 bytes
             int longSize = Long.BYTES;   // 8 bytes
-            // Total size of one dictionary entry
+            // Total SPIMIsize of one dictionary entry
             int entrySize = termSize + 4 * intSize + 2 * longSize;
 
             ByteBuffer buffer = ByteBuffer.allocate(entrySize);
@@ -368,6 +349,55 @@ public class SPIMI {
         CharBuffer charBuffer = StandardCharsets.UTF_8.decode(termBuffer);
         // Convert CharBuffer to String
         return charBuffer.toString().trim(); // Trim the string in case there are any zero padding bytes
+    }
+
+
+
+    public static void readDictionaryToFile(String inputPath, String outputPath) {
+        try (
+                FileChannel vocFchan = FileChannel.open(Paths.get(inputPath), StandardOpenOption.READ);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath))
+        ) {
+            int termSize = 40;
+            int intSize = Integer.BYTES;
+            int longSize = Long.BYTES;
+            int entrySize = termSize + 4 * intSize + 2 * longSize;
+
+            ByteBuffer buffer = ByteBuffer.allocate(entrySize);
+
+            while (vocFchan.read(buffer) != -1) {
+                buffer.flip();
+
+                if (buffer.remaining() >= entrySize) {
+                    byte[] termBytes = new byte[termSize];
+                    buffer.get(termBytes);
+                    String term = decodeTerm(termBytes);
+
+                    int df = buffer.getInt();
+                    int cf = buffer.getInt();
+                    long offsetDoc = buffer.getLong();
+                    long offsetFreq = buffer.getLong();
+                    int lengthDoc = buffer.getInt();
+                    int lengthFreq = buffer.getInt();
+
+                    writer.write("Term: " + term + "\n");
+                    writer.write("Document Frequency (df): " + df + "\n");
+                    writer.write("Collection Frequency (cf): " + cf + "\n");
+                    writer.write("Offset Doc: " + offsetDoc + "\n");
+                    writer.write("Offset Freq: " + offsetFreq + "\n");
+                    writer.write("Length: " + lengthDoc + "\n");
+                    writer.write("LengthFreq: " + lengthFreq + "\n");
+                    writer.write("-------------------------\n");
+                } else {
+                    writer.write("Partial read or end of file reached. Exiting.\n");
+                    break;
+                }
+
+                buffer.clear();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

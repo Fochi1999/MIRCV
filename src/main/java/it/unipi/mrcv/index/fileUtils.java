@@ -10,6 +10,7 @@ public class fileUtils {
     public static final String finalVoc="vocabulary";
     public static final String finalDoc="docIds";
     public static final String finalFreq="frequencies";
+    public static long collectionLength = 0;
     public static void deleteTempFiles(){
         final File folder =new File("./");
         final File[] files = folder.listFiles( new FilenameFilter() {
