@@ -3,6 +3,7 @@ package it.unipi.mrcv.index;
 import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
+import it.unipi.mrcv.global.Global;
 import it.unipi.mrcv.preprocess.preprocess;
 
 import java.io.*;
@@ -27,7 +28,7 @@ public class SPIMI {
     // Posting Lists in memory
     public static InvertedIndex postingLists = new InvertedIndex();
     // allocate memory for the docIndex file; this is a magic number, it is more than enough for one block worth of docIdex
-    public static ByteBuffer docIndexBuffer = ByteBuffer.allocateDirect(1024 * 1024 * 30);
+    public static ByteBuffer docIndexBuffer = ByteBuffer.allocateDirect(1024 * 1024 * 100);
 
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
         // Max memory usable by the JVM
@@ -111,16 +112,16 @@ public class SPIMI {
                         StandardOpenOption.CREATE,
                         StandardOpenOption.APPEND
                 );
-                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixDocFiles + counterBlock),
+                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixDocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE
                 );
-                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixFreqFiles + counterBlock),
+                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixFreqFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE);
-                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixVocFiles + counterBlock),
+                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixVocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)
@@ -180,16 +181,16 @@ public class SPIMI {
     }
     private static void writeToDiskCompressed() throws IOException, InterruptedException {
         try (
-                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixDocFiles + counterBlock),
+                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixDocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE
                 );
-                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixFreqFiles + counterBlock),
+                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixFreqFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE);
-                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixVocFiles + counterBlock),
+                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixVocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)
@@ -230,10 +231,26 @@ public class SPIMI {
             e.printStackTrace();
         }
     }
+    public static void readCompressedDic(String path) {
 
+            readCompressedDic(path,null,null,false,false);
 
+    }
 
-    public static void readCompressedDic(String path,String path2){
+    public static void readCompressedDic(String path,String path2, boolean docids,boolean freq) {
+        if(docids && freq){
+            System.out.println("INSERT ALL VARIABLES");
+            return;
+        }
+        if(docids){
+            readCompressedDic(path,path2,null,true,false);
+        }
+        if(freq){
+            readCompressedDic(path,null,path2,false,true);
+        }
+    }
+
+    public static void readCompressedDic(String path,String path2,String path3, boolean docids,boolean freq){
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
 
@@ -266,18 +283,23 @@ public class SPIMI {
 
                     // Print the details
                     System.out.println("Term: " + term);
-                    System.out.println("Document Frequency (df): " + df);
+                    /*System.out.println("Document Frequency (df): " + df);
                     System.out.println("Collection Frequency (cf): " + cf);
                     System.out.println("Offset Doc: " + offsetDoc);
                     System.out.println("Offset Freq: " + offsetFreq);
                     System.out.println("LengthDoc: " + lengthDoc);
-                    System.out.println("LengthFreq: " + lengthFreq);
-                    System.out.print("DocIds: ");
-                    readFromCompressedDocIds(path2,lengthDoc,(int)offsetDoc);
-                    System.out.println("");
-                    System.out.print("Frequencies: ");
-                    //readFromCompressedDocIds(path3,length,(int)offsetFreq);
-                    System.out.println("-------------------------");
+                    System.out.println("LengthFreq: " + lengthFreq);*/
+                    if(docids) {
+                        System.out.print("DocIds: ");
+                        readFromCompressedDocIds(path2, lengthDoc, (int) offsetDoc);
+                        System.out.println("");
+                    }
+                    if(freq){
+                        System.out.print("Frequencies: ");
+                        readFromCompressedDocIds(path3,lengthFreq,(int)offsetFreq);
+                    }
+
+                    //System.out.println("-------------------------");
                 } else {
                     // Not enough data for a full dictionary entry, handle partial read or end of file
                     System.err.println("Partial read or end of file reached. Exiting.");
