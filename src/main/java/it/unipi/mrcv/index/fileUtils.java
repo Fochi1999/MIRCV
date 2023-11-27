@@ -1,9 +1,14 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.data_structures.DictionaryElem;
 import it.unipi.mrcv.global.Global;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public class fileUtils {
 
@@ -54,5 +59,15 @@ public class fileUtils {
                 System.err.println( "Can't remove " + file.getAbsolutePath() );
             }
         }
+    }
+    public static DictionaryElem binarySearchOnFile(String path){
+        DictionaryElem ret=new DictionaryElem();
+        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
+                StandardOpenOption.READ)) {
+            
+        }catch(Exception e){
+
+        }
+        return ret;
     }
 }
