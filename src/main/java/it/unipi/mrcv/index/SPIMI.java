@@ -234,24 +234,15 @@ public class SPIMI {
     }
     public static void readCompressedDic(String path) {
 
-            readCompressedDic(path,null,null,false,false);
+            readCompressedDic(path,null,null);
 
     }
 
-    public static void readCompressedDic(String path,String path2, boolean docids,boolean freq) {
-        if(docids && freq){
-            System.out.println("INSERT ALL VARIABLES");
-            return;
-        }
-        if(docids){
-            readCompressedDic(path,path2,null,true,false);
-        }
-        if(freq){
-            readCompressedDic(path,null,path2,false,true);
-        }
+    public static void readCompressedDic(String path,String path2) {
+        readCompressedDic(path,path2,null);
     }
 
-    public static void readCompressedDic(String path,String path2,String path3, boolean docids,boolean freq){
+    public static void readCompressedDic(String path,String path2,String path3){
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
 
@@ -290,12 +281,12 @@ public class SPIMI {
                     System.out.println("Offset Freq: " + offsetFreq);
                     System.out.println("LengthDoc: " + lengthDoc);
                     System.out.println("LengthFreq: " + lengthFreq);
-                    if(docids) {
+                    if(path2!=null) {
                         System.out.print("DocIds: ");
                         readFromCompressedDocIds(path2, lengthDoc,  offsetDoc);
                         System.out.println("");
                     }
-                    if(freq){
+                    if(path3!=null){
                         System.out.print("Frequencies: ");
                         readFromCompressedFrequencies(path3,lengthFreq,offsetFreq);
                     }
