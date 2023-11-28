@@ -4,7 +4,8 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.charset.StandardCharsets;
-import static it.unipi.mrcv.index.fileUtils.collectionLength;
+
+import static it.unipi.mrcv.global.Global.collectionLength;
 
 public class DictionaryElem {
     // term

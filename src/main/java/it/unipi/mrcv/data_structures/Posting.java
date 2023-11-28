@@ -16,7 +16,7 @@ public class Posting {
     }
 
     // utility methods
-    public static int getDocid() {
+    public  int getDocid() {
         return docid;
     }
 
@@ -24,7 +24,7 @@ public class Posting {
         this.docid = docid;
     }
 
-    public static int getFrequency() {
+    public  int getFrequency() {
         return frequency;
     }
 

@@ -6,7 +6,7 @@ import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
 import it.unipi.mrcv.global.Global;
 import it.unipi.mrcv.preprocess.preprocess;
-import static it.unipi.mrcv.index.fileUtils.collectionLength;
+import static it.unipi.mrcv.global.Global.collectionLength;
 
 import java.io.*;
 import java.nio.ByteBuffer;

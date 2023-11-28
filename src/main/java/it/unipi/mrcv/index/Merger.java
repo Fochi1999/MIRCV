@@ -24,8 +24,8 @@ public class Merger {
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
 
-    public static int num_blocks = 8;
-     //public static int num_blocks = SPIMI.counterBlock;
+    //public static int num_blocks = 8;
+    public static int num_blocks = SPIMI.counterBlock;
     //flag compression
     public static boolean compression=Global.compression;
 
@@ -177,7 +177,7 @@ public class Merger {
 
                 // implement skipping
 
-
+                
                 temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
                 temporaryElem.getDictionaryElem().setOffsetDoc(latestDocOff);
                 vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.SPIMIsize(), DictionaryElem.SPIMIsize());

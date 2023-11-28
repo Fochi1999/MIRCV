@@ -32,4 +32,3 @@ public class DocumentScore {
             return false;
         }
     }
-}

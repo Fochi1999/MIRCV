@@ -27,11 +27,6 @@ public class QueryPreprocesser {
         return result;
     }
 
-    /**
-     * Function that allows to execute the processing of the query
-     * @param tokens the tokens of the query
-     * @throws IOException if the channel is not found
-     */
 
     public class executeQueryPreprocesser {
 
@@ -39,15 +34,14 @@ public class QueryPreprocesser {
         private static ArrayList<PostingList> orderedPlQueryTerm = new ArrayList<>();
         private static HashMap<Integer, Double> hm_PosScore = new HashMap<>();
         private static ArrayList<Double> orderedMaxScore;
-        private static HashMap<Integer, Integer> hm_PosLen = new HashMap<>();
-
+        private static HashMap<Integer, Integer> hm_PosLen = new HashMap<>();}}
         /**
          * Function that allows executing the processing of the query
          *
          * @param tokens the tokens of the query
          * @throws IOException if the channel is not found
          */
-        public static void executeQueryProcesser(ArrayList<String> tokens, int k) throws IOException {
+/*        public static void executeQueryProcesser(ArrayList<String> tokens, int k) throws IOException {
             int pos = 0;
 
             for (String t : tokens) {
@@ -134,3 +128,4 @@ public class QueryPreprocesser {
     }
 
 }
+*/

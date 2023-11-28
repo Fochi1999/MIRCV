@@ -19,7 +19,7 @@ public class Global {
     public static boolean compression=true;
     public static boolean stem=false;
     public static boolean stopWords=false;
-
+    public static int collectionLength;
     public static List<String> stopWordsList;
 
     public static void load(){

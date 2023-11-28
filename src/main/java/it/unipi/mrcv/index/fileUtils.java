@@ -5,10 +5,10 @@ import it.unipi.mrcv.global.Global;
 
 import java.io.File;
 import java.io.FilenameFilter;
-
-import java.io.RandomAccessFile;
-
-
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public class fileUtils {
 
@@ -60,11 +60,17 @@ public class fileUtils {
             }
         }
     }
-    public static DictionaryElem binarySearchOnFile(String path){
+    public static DictionaryElem binarySearchOnFile(String path,String term){
         DictionaryElem ret=new DictionaryElem();
+        long firstPos=0;
+        long currentPos;
+        long lastPos;
+        String res;
+        int entrySize=DictionaryElem.size();
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
-            
+                lastPos=vocFchan.size();
+                currentPos=lastPos/2;
         }catch(Exception e){
 
         }

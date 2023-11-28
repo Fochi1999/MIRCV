@@ -1,5 +1,6 @@
 package it.unipi.mrcv.data_structures;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class PostingList {
     public PostingList() {
         this.term = " ";
         this.postings = new ArrayList<>();
-        this.actualPosting = null;
+
     }
 
     public PostingList(String term) {
@@ -58,7 +59,7 @@ public class PostingList {
     public void printPostingList() {
         System.out.println("Posting List:");
         for (Posting p : this.getPl()) {
-            System.out.printf("Docid: %d - Freq: %d\n", Posting.getDocid(), Posting.getFrequency());
+            System.out.printf("Docid: %d - Freq: %d\n", p.getDocid(), p.getFrequency());
         }
     }
 
@@ -82,11 +83,6 @@ public class PostingList {
         return maxTFIDF;
     }
 
-    public long getDocumentFrequency() {
-    }
-
-    public long getMaxDocumentFrequency() {
-    }
 
 
     // You can add more methods as needed for manipulating the posting list

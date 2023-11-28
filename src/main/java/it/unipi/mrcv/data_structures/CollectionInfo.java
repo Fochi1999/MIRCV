@@ -12,12 +12,13 @@ public class CollectionInfo {
      * Function that write out the information about the collection
      * @throws IOException if the channel is not found
      */
+    /*
     public static void writeCollectionInfoToDisk() throws IOException {
 
         ByteBuffer docIndexBuffer = ByteBuffer.allocate(16);
         CollectionInfo_raf.getChannel().position(CollectionInfo_raf.getChannel().size());
 
-        /* Write the Collection Info into file */
+        
         docIndexBuffer.putLong(docid_counter);
         docIndexBuffer.putLong(total_doc_len);
 
@@ -25,7 +26,7 @@ public class CollectionInfo {
 
         while (docIndexBuffer.hasRemaining())
             CollectionInfo_raf.getChannel().write(docIndexBuffer);
-    }
+    }*/
     /**
      * Function that write out the information about the collection in DEBUG-MODE
      * @throws IOException if the channel is not found
