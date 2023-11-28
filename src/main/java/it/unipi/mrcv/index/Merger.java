@@ -3,6 +3,7 @@ package it.unipi.mrcv.index;
 import it.unipi.mrcv.compression.Unary;
 import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.DictionaryElem;
+import it.unipi.mrcv.data_structures.SkipElem;
 import it.unipi.mrcv.global.Global;
 
 import java.io.FileNotFoundException;
@@ -57,6 +58,10 @@ public class Merger {
         List<RandomAccessFile> vocPointers = new ArrayList<>();
         // pQueue is the priority queue used to store the vocabulary entries
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
+        // blockLength is the length of the blocks used for skipping
+        int blockLength;
+        // ArrayList used to store the skip elements of the current term
+        ArrayList<SkipElem> skipList = new ArrayList<>();
         // if flag compression is set on false change files names
         String pathDocs= !Global.compression?Global.finalDoc:Global.finalDocCompressed;
         String pathFreqs= !Global.compression?Global.finalFreq:Global.finalFreqCompressed;
@@ -172,7 +177,33 @@ public class Merger {
                 }
 
                 // implement skipping
+                if(temporaryDocIds.size() >= 1024){
+                    blockLength = (int) Math.ceil(Math.sqrt(temporaryDocIds.size()));
+                    // for every blockLength docIds, create a skip element and add it to the skipList
+                    for(int i = 0; i < temporaryDocIds.size(); i += blockLength){
+                        // the step is the number of bytes needed to store the block, it varies based on the compression
+                        int docStep = (compression == true) ?
+                                VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size()))).length :
+                                blockLength * 4;
+                        int freqStep = (compression == true)?
+                                Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size()))).length :
+                                blockLength * 4;
+                        // create the skip element and add it to the skipList
+                        SkipElem skipElem = new SkipElem();
+                        skipElem.setDocID(temporaryDocIds.get(i));
+                        skipElem.setOffsetDoc(latestDocOff + docStep);
+                        skipElem.setDocBlockLen(blockLength);
+                        skipElem.setOffsetFreq(latestFreqOff + freqStep);
+                        skipElem.setFreqBlockLen(blockLength);
+                        skipList.add(skipElem);
+                    }
 
+                }
+                else {
+                    // if the block is too small, the skipList is empty
+                    skipList.clear();
+
+                }
 
                 temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
                 temporaryElem.getDictionaryElem().setOffsetDoc(latestDocOff);

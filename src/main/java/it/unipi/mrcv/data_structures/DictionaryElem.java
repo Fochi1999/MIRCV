@@ -107,7 +107,7 @@ public class DictionaryElem {
 
     public void setMaxBM25(double maxBM25) { this.maxBM25 = maxBM25; }
 
-/*    public void updateMaxBM25(PostingList pl) {
+    public void updateMaxBM25(PostingList pl) {
         double current_BM25;
 
         for (Posting p: pl.getPostings()) {
@@ -118,7 +118,7 @@ public class DictionaryElem {
             if (current_BM25 > this.getMaxBM25())
                 this.setMaxBM25(current_BM25);
         }
-    }*/
+    }
 
     // get methods
     public String getTerm(){
@@ -172,6 +172,43 @@ public class DictionaryElem {
     }
 
     public void writeElemToDisk(MappedByteBuffer vocBuffer){
+        CharBuffer charBuffer = CharBuffer.allocate(40);
+        String term = this.term;
+        for (int i = 0; i < term.length() && i < 40; i++)
+            charBuffer.put(i, term.charAt(i));
+
+        // Write the term into file
+        ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
+        // Encode the CharBuffer into a ByteBuffer
+        ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
+        // Ensure the buffer is at the start before reading from it
+        encodedBuffer.rewind();
+        // Transfer bytes to the new buffer
+        for (int i = 0; i < 40; i++) {
+            truncatedBuffer.put(encodedBuffer.get(i));
+        }
+
+        truncatedBuffer.rewind();
+        vocBuffer.put(truncatedBuffer);
+
+        // write statistics
+        vocBuffer.putInt(df);
+        vocBuffer.putInt(cf);
+        vocBuffer.putLong(offsetDoc);
+        vocBuffer.putLong(offsetFreq);
+        vocBuffer.putInt(lengthDoc);
+        vocBuffer.putInt(lengthFreq);
+        // to consider for buffersize
+        vocBuffer.putInt(maxTF);
+        vocBuffer.putLong(offsetSkip);
+        vocBuffer.putInt(skipLen);
+        vocBuffer.putDouble(idf);
+        vocBuffer.putDouble(maxTFIDF);
+        vocBuffer.putDouble(maxBM25);
+
+    }
+
+    public void writeElemToDiskSPIMI(MappedByteBuffer vocBuffer){
         CharBuffer charBuffer = CharBuffer.allocate(40);
         String term = this.term;
         for (int i = 0; i < term.length() && i < 40; i++)
