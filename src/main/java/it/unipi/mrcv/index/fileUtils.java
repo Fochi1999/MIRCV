@@ -12,7 +12,6 @@ import java.io.RandomAccessFile;
 
 public class fileUtils {
 
-
     public static void deleteTempFiles(){
         final File folder =new File("./");
         final File[] files = folder.listFiles( new FilenameFilter() {

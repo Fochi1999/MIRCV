@@ -21,7 +21,7 @@ public class Dictionary {
     }
 
     public long size() {
-        return dictionary.size()*DictionaryElem.size();
+        return dictionary.size()*DictionaryElem.SPIMIsize();
 
     }
 
