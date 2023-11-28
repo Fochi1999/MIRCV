@@ -1,23 +1,24 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.data_structures.DictionaryElem;
+import it.unipi.mrcv.global.Global;
+
 import java.io.File;
 import java.io.FilenameFilter;
 
+import java.io.RandomAccessFile;
+
+
+
 public class fileUtils {
-    public static final String prefixDocFiles="doc_";
-    public static final String prefixVocFiles="voc_";
-    public static final String prefixFreqFiles="freq_";
-    public static final String finalVoc="vocabulary";
-    public static final String finalDoc="docIds";
-    public static final String finalFreq="frequencies";
-    public static long collectionLength = 0;
+
     public static void deleteTempFiles(){
         final File folder =new File("./");
         final File[] files = folder.listFiles( new FilenameFilter() {
             @Override
             public boolean accept( final File dir,
                                    final String name ) {
-                String regexString="^("+prefixDocFiles+"|"+prefixVocFiles+"|"+prefixFreqFiles+").*";
+                String regexString="^("+ Global.prefixDocFiles+"|"+Global.prefixVocFiles+"|"+Global.prefixFreqFiles+").*";
                 return name.matches( regexString);
             }
         } );
@@ -33,7 +34,7 @@ public class fileUtils {
             @Override
             public boolean accept( final File dir,
                                    final String name ) {
-                String regexString="^("+finalFreq+"|"+finalDoc+"|"+finalVoc+").*";
+                String regexString="^("+Global.finalFreq+"|"+Global.finalDoc+"|"+Global.finalVoc+").*";
                 return name.matches( regexString);
             }
         } );
@@ -42,5 +43,31 @@ public class fileUtils {
                 System.err.println( "Can't remove " + file.getAbsolutePath() );
             }
         }
+    }
+    public static void deleteFilesCompressed(){
+        final File folder =new File("./");
+        final File[] files = folder.listFiles( new FilenameFilter() {
+            @Override
+            public boolean accept( final File dir,
+                                   final String name ) {
+                String regexString="^("+Global.finalFreqCompressed+"|"+Global.finalDocCompressed+"|"+Global.finalVocCompressed+").*";
+                return name.matches( regexString);
+            }
+        } );
+        for ( final File file : files ) {
+            if ( !file.delete() ) {
+                System.err.println( "Can't remove " + file.getAbsolutePath() );
+            }
+        }
+    }
+    public static DictionaryElem binarySearchOnFile(String path){
+        DictionaryElem ret=new DictionaryElem();
+        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
+                StandardOpenOption.READ)) {
+            
+        }catch(Exception e){
+
+        }
+        return ret;
     }
 }

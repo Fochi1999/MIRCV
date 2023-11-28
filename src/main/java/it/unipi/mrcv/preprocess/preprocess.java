@@ -1,9 +1,12 @@
 package it.unipi.mrcv.preprocess;
 
+import it.unipi.mrcv.global.Global;
 import opennlp.tools.stemmer.PorterStemmer;
-import opennlp.tools.tokenize.SimpleTokenizer;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -13,20 +16,32 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class preprocess {
-    public static List<String> all(String text){
+    public static ArrayList<String> all(String text) {
+        ArrayList<String> ret;
         text=removePuntuaction(text);
         text=lowercase(text);
-        text=text.replaceAll("\\s+", " "); //remove extra whitespaces
-
         text=removeUnicode(text);
+        text=text.replaceAll("\\s+", " "); //remove extra whitespaces
+        ret=tokenize(text);
+        if(Global.stopWords==true){
+            ret=stopWords(ret);
+        }
+        if(Global.stem==true){
+            ret=stem(ret);
+        }
         //if flag allora tokenStem else tokeniza e basta
         //return stem(text);
-        return tokenize(text);
+        return ret;
     }
-    public static List<String> stem(String text){
-        String[] tokens = SimpleTokenizer.INSTANCE.tokenize(text);
+
+    private static ArrayList<String> stopWords(ArrayList<String> tokens) {
+        tokens.removeAll(Global.stopWordsList);
+        return tokens;
+    }
+
+    public static ArrayList<String> stem(ArrayList<String> tokens){
         PorterStemmer porterStemmer = new PorterStemmer();
-        List<String> ret=new ArrayList<>();
+        ArrayList<String> ret=new ArrayList<>();
         for (String token : tokens) {
             String stem = porterStemmer.stem(token);
             //System.out.println("Token: " + token + " - Stem: " + stem);
@@ -35,7 +50,7 @@ public class preprocess {
         return ret;
     }
 
-    public static List<String> tokenize(String text){
+    public static ArrayList<String> tokenize(String text){
 
         return Stream.of(text.toLowerCase().split(" "))
                 .collect(Collectors.toCollection(ArrayList<String>::new));
@@ -49,7 +64,7 @@ public class preprocess {
         return result;
     }
 
-    public static String StopWordRemoval(List<String> stopwordsList, List<String> words){
+    public static String StopWordRemoval(ArrayList<String> stopwordsList, ArrayList<String> words){
         HashSet<String> stopwords = new HashSet<>(stopwordsList);
         StringBuilder result = new StringBuilder();
         for (String word : words) {
