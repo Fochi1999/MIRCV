@@ -22,7 +22,11 @@ import java.util.*;
 public class SPIMI {
     // counter for the block
     public static int counterBlock = 0;
-    // counter for the postings in the block
+
+    private static final int TERM_SIZE = 40;
+    private static final int INT_SIZE = Integer.BYTES;
+    private static final int LONG_SIZE = Long.BYTES;
+
     public static int numPosting = 0;
     // Dictionary in memory
     public static Dictionary dictionary = new Dictionary();
