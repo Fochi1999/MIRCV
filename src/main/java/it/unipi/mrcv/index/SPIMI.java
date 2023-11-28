@@ -1,8 +1,10 @@
 package it.unipi.mrcv.index;
 
+import it.unipi.mrcv.compression.Unary;
 import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.*;
 import it.unipi.mrcv.data_structures.Dictionary;
+import it.unipi.mrcv.global.Global;
 import it.unipi.mrcv.preprocess.preprocess;
 import static it.unipi.mrcv.index.fileUtils.collectionLength;
 
@@ -21,14 +23,20 @@ import java.util.*;
 public class SPIMI {
     // counter for the block
     public static int counterBlock = 0;
-    // counter for the postings in the block
+
+    private static final int TERM_SIZE = 40;
+    private static final int INT_SIZE = Integer.BYTES;
+    private static final int LONG_SIZE = Long.BYTES;
+
     public static int numPosting = 0;
     // Dictionary in memory
     public static Dictionary dictionary = new Dictionary();
     // Posting Lists in memory
     public static InvertedIndex postingLists = new InvertedIndex();
+
     // list that stores the docIndex
     public static List<Integer> docIndexList = new ArrayList<>();
+
 
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
         // Max memory usable by the JVM
@@ -116,16 +124,16 @@ public class SPIMI {
                         StandardOpenOption.CREATE,
                         StandardOpenOption.APPEND
                 );
-                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixDocFiles + counterBlock),
+                FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixDocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE
                 );
-                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixFreqFiles + counterBlock),
+                FileChannel freqsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixFreqFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE);
-                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(fileUtils.prefixVocFiles + counterBlock),
+                FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixVocFiles + counterBlock),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
                         StandardOpenOption.CREATE)
@@ -161,7 +169,7 @@ public class SPIMI {
                 }
 
                 // update the length of the posting list in the dictionary
-                dictionaryElem.setLengthDoc(counter);
+                dictionaryElem.setLengthDocIds(counter);
                 dictionaryElem.setLengthFreq(counter);
                 dictionaryElem.writeElemToDisk(vocBuffer);
 
@@ -211,10 +219,17 @@ public class SPIMI {
             e.printStackTrace();
         }
     }
+    public static void readCompressedDic(String path) {
 
+            readCompressedDic(path,null,null);
 
+    }
 
-    public static void readCompressedDic(String path,String path2){
+    public static void readCompressedDic(String path,String path2) {
+        readCompressedDic(path,path2,null);
+    }
+
+    public static void readCompressedDic(String path,String path2,String path3){
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
 
@@ -253,11 +268,16 @@ public class SPIMI {
                     System.out.println("Offset Freq: " + offsetFreq);
                     System.out.println("LengthDoc: " + lengthDoc);
                     System.out.println("LengthFreq: " + lengthFreq);
-                    System.out.print("DocIds: ");
-                    readFromCompressedDocIds(path2,lengthDoc,(int)offsetDoc);
-                    System.out.println("");
-                    System.out.print("Frequencies: ");
-                    //readFromCompressedDocIds(path3,length,(int)offsetFreq);
+                    if(path2!=null) {
+                        System.out.print("DocIds: ");
+                        readFromCompressedDocIds(path2, lengthDoc,  offsetDoc);
+                        System.out.println("");
+                    }
+                    if(path3!=null){
+                        System.out.print("Frequencies: ");
+                        readFromCompressedFrequencies(path3,lengthFreq,offsetFreq);
+                    }
+
                     System.out.println("-------------------------");
                 } else {
                     // Not enough data for a full dictionary entry, handle partial read or end of file
@@ -271,6 +291,22 @@ public class SPIMI {
             e.printStackTrace();
         }
 
+    }
+
+    private static void readFromCompressedFrequencies(String path3, int lengthFreq, long offsetFreq) {
+        try{
+            RandomAccessFile raf=new RandomAccessFile(new File(path3),"r");
+            byte[] b=new byte[lengthFreq];
+            raf.seek(offsetFreq);
+            raf.read(b);
+            ArrayList<Integer> ret= Unary.unaryToArrayInt(b);
+            for(int x: ret){
+                System.out.print(x+" ");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void readDictionary(String path) {
@@ -331,8 +367,8 @@ public class SPIMI {
             byte[] b=new byte[length];
             raf.seek(offset);
             raf.read(b);
-            ArrayList<Long> ret=VariableByte.fromByteToArrayLong(b);
-            for(long x: ret){
+            ArrayList<Integer> ret=VariableByte.fromByteToArrayInt(b);
+            for(int x: ret){
                 System.out.print(x+" ");
             }
 
