@@ -1,5 +1,10 @@
 package it.unipi.mrcv.data_structures;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 public class DictionaryElem {
     // term
     private String term;
@@ -12,7 +17,9 @@ public class DictionaryElem {
     // offset of the posting list containing frequencies
     private long offsetFreq;
     // length of the posting list
-    private int length;
+    private int lengthDocIds;
+
+    private int lengthFreq;
 
     // default constructor
     public DictionaryElem(){
@@ -24,7 +31,8 @@ public class DictionaryElem {
         this.cf = 1;
         this.offsetDoc = 0;
         this.offsetFreq = 0;
-        this.length = 0;
+        this.lengthDocIds = 0;
+        this.lengthFreq = 0;
     };
 
     // set methods
@@ -44,8 +52,12 @@ public class DictionaryElem {
         this.offsetFreq = offsetFreq;
     };
 
-    public void setLength(int length){
-        this.length = length;
+    public void setLengthDocIds(int lengthDocIds){
+        this.lengthDocIds = lengthDocIds;
+    };
+
+    public void setLengthFreq(int lengthFreq){
+        this.lengthFreq = lengthFreq;
     };
 
     public void setTerm(String term){
@@ -73,12 +85,52 @@ public class DictionaryElem {
         return this.offsetFreq;
     };
 
-    public int getLength(){
-        return this.length;
+    public int getLengthDocIds(){
+        return this.lengthDocIds;
+    };
+    public int getLengthFreq(){
+        return this.lengthFreq;
     };
 
     public static int size(){
-        return 68; //size of everything in the class
+        return 72; //size of everything in the class
     }
 
+    public void writeElemToDisk(MappedByteBuffer vocBuffer){
+        CharBuffer charBuffer = CharBuffer.allocate(40);
+        String term = this.term;
+        for (int i = 0; i < term.length() && i < 40; i++)
+            charBuffer.put(i, term.charAt(i));
+
+        // Write the term into file
+        ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
+        // Encode the CharBuffer into a ByteBuffer
+        ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
+        // Ensure the buffer is at the start before reading from it
+        encodedBuffer.rewind();
+        // Transfer bytes to the new buffer
+        for (int i = 0; i < 40; i++) {
+            truncatedBuffer.put(encodedBuffer.get(i));
+        }
+
+        truncatedBuffer.rewind();
+        vocBuffer.put(truncatedBuffer);
+
+        // write statistics
+        vocBuffer.putInt(df);
+        vocBuffer.putInt(cf);
+        vocBuffer.putLong(offsetDoc);
+        vocBuffer.putLong(offsetFreq);
+        vocBuffer.putInt(lengthDocIds);
+        vocBuffer.putInt(lengthFreq);
+
+    }
+
+    public void printDebug() {
+        System.out.println("DEBUG:");
+        System.out.println("term: "+term);
+        System.out.println("df: "+df);
+        System.out.println("docLength: "+ lengthDocIds);
+        System.out.println("freqLength: "+lengthFreq);
+    }
 }

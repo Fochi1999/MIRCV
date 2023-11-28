@@ -1,64 +1,74 @@
 package it.unipi.mrcv;
 
-import it.unipi.mrcv.data_structures.*;
-
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.IntBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.*;
+import it.unipi.mrcv.compression.Unary;
+import it.unipi.mrcv.compression.VariableByte;
+import it.unipi.mrcv.index.Merger;
+import it.unipi.mrcv.index.SPIMI;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-
-import it.unipi.mrcv.index.Merger;
-import it.unipi.mrcv.index.MergerThreadTry;
-import it.unipi.mrcv.index.SPIMI;
-import it.unipi.mrcv.index.fileUtils;
-
-import static it.unipi.mrcv.index.SPIMI.dictionary;
-import static it.unipi.mrcv.index.SPIMI.postingLists;
 
 
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
+        SPIMI.exeSPIMI("reduced collection.tsv");
 
-        long startTime = System.nanoTime();
-        fileUtils.deleteTempFiles();
-        fileUtils.deleteFiles();
-        SPIMI.exeSPIMI("collection.tsv");
 
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1_000_000; // Convert from nanoseconds to milliseconds
-
-        System.out.println("Elapsed time in milliseconds: " + duration);
-
-        //SPIMI.readIndex("doc_0");
         Merger.Merge();
-        SPIMI.readDictionary("vocabulary");
-       /* RandomAccessFile p=new RandomAccessFile("voc_0","r");
-        p.seek(68*800); //set the pointer to 0
-        Merger.readLineFromDictionary(p,0);*/
-        //System.out.println(SPIMI.debugCounter);
-        //SPIMI.readIndex("doc_0");
-        /*List<Integer> filesN=new ArrayList<>();
-        for(int i=0;i<SPIMI.counterBlock;i++){
-            filesN.add(i);
+        //SPIMI.readCompressedDic("vocabulary","docids");
+        //SPIMI.readIndex("frequencies");
+
+/*
+        int nProva=3;
+        ArrayList<Integer> ListProva=new ArrayList<>();
+        ArrayList<Integer> result;
+        byte[] buffer = new byte[1024];
+        for(int i=0;i<200;i++){
+            ListProva.add(i);
         }
-        for(int i=0;i<SPIMI.counterBlock;i=i+2){
-            MergerThreadTry mg=new MergerThreadTry(filesN.subList(i,i+1),i*10+(i+1));
-            mg.start();
+        buffer=Unary.ArrayIntToUnary(ListProva);
+        result=Unary.unaryToArrayInt(buffer);
+
+        for(int x:result){
+            System.out.println(x);
         }
-        */
+*/
+/*
+        int nProva=3;
+        ArrayList<Integer> ListProva=new ArrayList<>();
+        ArrayList<Integer> result=new ArrayList<>();
+        byte[] buffer = new byte[1024];
+        for(int i=0;i<200;i++){
+            ListProva.add(i);
+            buffer=Unary.intToUnary(i);
+            result.add(Unary.unaryToInt(buffer));
+        }
+
+
+        for(int x:result){
+            System.out.println(x);
+        }*/
+    /*    long nProva=76;
+        ArrayList<Long> listLongP=new ArrayList<>();
+        ArrayList<Long> res=new ArrayList<>();
+        byte[] buffer;
+        for(long i=0;i<4000000;i++){
+            listLongP.add((long)i);
+            buffer= VariableByte.fromLongToVarByte(i);
+            System.out.println(i+": ");
+            for(byte b:buffer){
+                System.out.print(b+" ");
+            }
+            System.out.println("");
+            res.add(VariableByte.fromVarByteToLong(buffer));
+            System.out.println(VariableByte.fromVarByteToLong(buffer));
+            if(VariableByte.fromVarByteToLong(buffer)!=i){
+                System.out.println("FALSE");
+            }
+        }
+*/
     }
 }
 

@@ -1,5 +1,6 @@
 package it.unipi.mrcv.index;
 
+// comparator for the termBlock class used in the priority queue for the merger
 public class ComparatorTerm  implements java.util.Comparator<termBlock> {
     @Override
     public int compare(termBlock o1, termBlock o2) {
