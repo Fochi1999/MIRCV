@@ -7,6 +7,7 @@ import it.unipi.mrcv.data_structures.Dictionary;
 import it.unipi.mrcv.global.Global;
 import it.unipi.mrcv.preprocess.preprocess;
 import static it.unipi.mrcv.global.Global.collectionLength;
+import static it.unipi.mrcv.global.Global.averageDocLength;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -51,6 +52,8 @@ public class SPIMI {
         String line = reader.readLine();
         // increase the stored collection length
         collectionLength++;
+        // instantiate the averageDocLength
+        averageDocLength = 0;
 
         // read the document collection line by line and execute the SPIMI algorithm
         while (line != null) {
@@ -72,6 +75,8 @@ public class SPIMI {
             docIndexList.add(docId);
             docIndexList.add(documentNumber);
             docIndexList.add(tokens.size());
+            // increase the averageDocLength
+            averageDocLength += tokens.size();
 
             // for each term in the line create/update posting lists and dictionary
             for (String term : tokens) {
@@ -113,16 +118,20 @@ public class SPIMI {
         }
         // write the last block on disk
         writeToDisk();
+        // close the reader
+        reader.close();
+        // compute the averageDocLength
+        averageDocLength = averageDocLength / collectionLength;
     }
 
     // function that writes the block on disk
     private static void writeToDisk() throws IOException, InterruptedException {
         // instantiate the fileUtils class
         try (
-                FileChannel docIndexFchan = FileChannel.open(Paths.get("docIndex"),
+                FileChannel docIndexFchan = FileChannel.open(Paths.get(Global.prefixDocIndex),
                         StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.APPEND
+                        StandardOpenOption.READ,
+                        StandardOpenOption.CREATE
                 );
                 FileChannel docsFchan = (FileChannel) Files.newByteChannel(Paths.get(Global.prefixDocFiles + counterBlock),
                         StandardOpenOption.WRITE,
@@ -140,7 +149,7 @@ public class SPIMI {
         ) {
 
             // instantiation of MappedByteBuffer for integer list of docIndex
-            MappedByteBuffer docIndexBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, docIndexList.size() * 4);
+            MappedByteBuffer docIndexBuffer = docIndexFchan.map(FileChannel.MapMode.READ_WRITE, 0, docIndexList.size() * 4);
             // instantiation of MappedByteBuffer for integer list of docids
             MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for integer list of freqs

@@ -9,6 +9,7 @@ public class Global {
     public static final String prefixDocFiles="doc_";
     public static final String prefixVocFiles="voc_";
     public static final String prefixFreqFiles="freq_";
+    public static final String prefixDocIndex="docIndex";
     public static final String finalVoc="vocabulary";
     public static final String finalDoc="docIds";
     public static final String finalFreq="frequencies";

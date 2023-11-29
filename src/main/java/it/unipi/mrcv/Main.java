@@ -15,14 +15,11 @@ import java.util.ArrayList;
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-       /* fileUtils.deleteTempFiles();
-        fileUtils.deleteFilesCompressed();
-        fileUtils.deleteFiles();*/
+
         long startTime = System.currentTimeMillis(); // Capture start time
-       // SPIMI.exeSPIMI("collection.tsv");
-        //Merger.Merge();
-        //SPIMI.readDictionaryToFile("vocabularyCompressed", "vocz.txt");
-        SPIMI.readDictionaryAndPostingCompressed(Global.finalVocCompressed,Global.finalDocCompressed);
+        SPIMI.exeSPIMI("collection.tsv");
+        Merger.Merge();
+
         long endTime = System.currentTimeMillis(); // Capture end time
 
         // Calculate the elapsed time and convert it to minutes
@@ -31,8 +28,7 @@ public class Main {
 
         // Print the execution time in minutes
         System.out.printf("Execution time: %.2f minutes\n", elapsedTimeMinutes);
-        //SPIMI.readCompressedDic("vocabulary","docids");
-        //SPIMI.readIndex("frequencies");
+
     }
 }
 

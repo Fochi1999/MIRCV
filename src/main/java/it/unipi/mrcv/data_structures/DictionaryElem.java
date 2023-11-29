@@ -114,7 +114,7 @@ public class DictionaryElem {
     public void setMaxTFIDF(double maxTFIDF) {
         this.maxTFIDF = maxTFIDF;
     }
-    public void setMaxTFIDF() {
+    public void computeMaxTFIDF() {
         this.maxTFIDF = (1 + Math.log10(this.maxTF)) * this.idf;
     }
 
@@ -128,8 +128,10 @@ public class DictionaryElem {
         double idf = Math.log((collectionLength - this.df + 0.5) / (this.df + 0.5)); // Adjusted IDF formula for BM25
         double numerator = tf * (k1 + 1);
         double denominator = tf + k1 * (1 - b + b * (docLength / averageDocLength));
-        this.maxBM25 = idf * (numerator / denominator);
+        // maxBM25 is the maximum BM25 between the current one and the one computed for the current document
+        this.maxBM25 = Math.max(this.maxBM25, idf * numerator / denominator);
     }
+
 
     // get methods
     public String getTerm(){
