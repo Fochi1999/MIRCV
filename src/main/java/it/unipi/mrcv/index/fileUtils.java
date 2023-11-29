@@ -64,6 +64,42 @@ public class fileUtils {
             }
         }
     }
+    public static DictionaryElem binarySearchOnFile(String path,String term,int initFirstPos,int initLastPos){
+        int step=DictionaryElem.size();
+        int firstPos=initFirstPos;
+        int lastPos=initLastPos;
+        int currentPos=(firstPos+lastPos)/2;
+        int previousPos=currentPos;
+        ByteBuffer readBuffer=ByteBuffer.allocate(step);
+        DictionaryElem readElem=new DictionaryElem();
+        String res;
+        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
+                StandardOpenOption.READ)) {
+            do {
+                readBuffer.clear();
+                previousPos=currentPos;
+                readEntryDictionary(readBuffer, vocFchan, currentPos * step, readElem);
+
+                if(readElem.getTerm().compareTo(term)>0){
+                    lastPos=currentPos;
+                }
+                else{
+                    firstPos=currentPos;
+                }
+                currentPos=(firstPos+lastPos)/2;
+                if(currentPos==previousPos && !readElem.getTerm().equals(term)){
+                    System.out.println("word doesn't exists in vocabulary");
+                    readElem=new DictionaryElem(null);
+                    break;
+                }
+
+            }while((!readElem.getTerm().equals(term)));
+
+        }catch(Exception e){
+
+        }
+        return readElem;
+    }
     public static DictionaryElem binarySearchOnFile(String path,String term){
         int step=DictionaryElem.size();
         int firstPos=0;
@@ -89,7 +125,7 @@ public class fileUtils {
                     firstPos=currentPos;
                 }
                 currentPos=(firstPos+lastPos)/2;
-                if(currentPos==previousPos){
+                if(currentPos==previousPos && !readElem.getTerm().equals(term)){
                     System.out.println("word doesn't exists in vocabulary");
                     readElem=new DictionaryElem(null);
                     break;
