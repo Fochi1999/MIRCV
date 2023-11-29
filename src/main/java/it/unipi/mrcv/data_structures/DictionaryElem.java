@@ -5,6 +5,7 @@ import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import static it.unipi.mrcv.global.Global.averageDocLength;
 import static it.unipi.mrcv.global.Global.collectionLength;
 
 public class DictionaryElem {
@@ -119,18 +120,16 @@ public class DictionaryElem {
 
     public void setMaxBM25(double maxBM25) { this.maxBM25 = maxBM25; }
 
-/*    public void updateMaxBM25(PostingList pl) {
-        double current_BM25;
-
-        for (Posting p: pl.getPostings()) {
-            current_BM25 = (p.getFrequency() /
-                    ((1 - 0.75) + 0.75 * (SPIMI.DocsLen.get((int) (p.getDocID()-1)) / SPIMI.avdl)
-                            + p.getFrequency()))*this.idf;
-
-            if (current_BM25 > this.getMaxBM25())
-                this.setMaxBM25(current_BM25);
-        }
-    }*/
+    // function that computes max BM25 for a given term
+    public void computeMaxBM25(int docLength) {
+        double k1 = 1.2;
+        double b = 0.75;
+        double tf = this.maxTF;
+        double idf = Math.log((collectionLength - this.df + 0.5) / (this.df + 0.5)); // Adjusted IDF formula for BM25
+        double numerator = tf * (k1 + 1);
+        double denominator = tf + k1 * (1 - b + b * (docLength / averageDocLength));
+        this.maxBM25 = idf * (numerator / denominator);
+    }
 
     // get methods
     public String getTerm(){

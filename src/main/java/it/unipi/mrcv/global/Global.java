@@ -21,6 +21,7 @@ public class Global {
     public static boolean stem=true;
     public static boolean stopWords=false;
     public static int collectionLength;
+    public static double averageDocLength;
     public static List<String> stopWordsList;
 
     public static void load(){
