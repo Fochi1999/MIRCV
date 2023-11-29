@@ -38,6 +38,9 @@ public class SPIMI {
     // list that stores the docIndex
     public static List<Integer> docIndexList = new ArrayList<>();
 
+    // docIndex offset
+    public static long offsetDocIndex = 0;
+
 
     public static void exeSPIMI(String path) throws IOException, InterruptedException {
         // Max memory usable by the JVM
@@ -71,10 +74,12 @@ public class SPIMI {
 
             // preprocess the line and obtain the tokens
             List<String> tokens = preprocess.all(parts[1]);
+            // TODO: avoid writing the docId in the docIndexList otherwise Tonellotto will kill us
             // write the docId, the document number and the document length in the docIndexList
             docIndexList.add(docId);
             docIndexList.add(documentNumber);
             docIndexList.add(tokens.size());
+
             // increase the averageDocLength
             averageDocLength += tokens.size();
 
@@ -149,7 +154,7 @@ public class SPIMI {
         ) {
 
             // instantiation of MappedByteBuffer for integer list of docIndex
-            MappedByteBuffer docIndexBuffer = docIndexFchan.map(FileChannel.MapMode.READ_WRITE, 0, docIndexList.size() * 4);
+            MappedByteBuffer docIndexBuffer = docIndexFchan.map(FileChannel.MapMode.READ_WRITE, offsetDocIndex, docIndexList.size() * 4);
             // instantiation of MappedByteBuffer for integer list of docids
             MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for integer list of freqs
@@ -161,6 +166,8 @@ public class SPIMI {
             for (int i = 0; i < docIndexList.size(); i++) {
                 docIndexBuffer.putInt(docIndexList.get(i));
             }
+            // update the offset of the docIndex
+            offsetDocIndex += docIndexList.size() * 4;
 
             // for each term in the term-postingList treemap write everything to file
             for (Map.Entry<String, PostingList>
