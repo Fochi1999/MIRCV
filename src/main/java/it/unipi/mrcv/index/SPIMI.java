@@ -395,9 +395,7 @@ public class SPIMI {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath))
         ) {
             int termSize = 40;
-            int intSize = Integer.BYTES;
-            int longSize = Long.BYTES;
-            int entrySize = termSize + 4 * intSize + 2 * longSize;
+            int entrySize = DictionaryElem.size();
 
             ByteBuffer buffer = ByteBuffer.allocate(entrySize);
 
@@ -415,6 +413,12 @@ public class SPIMI {
                     long offsetFreq = buffer.getLong();
                     int lengthDoc = buffer.getInt();
                     int lengthFreq = buffer.getInt();
+                    int maxTF = buffer.getInt();
+                    long offsetSkip = buffer.getLong();
+                    int skipLen = buffer.getInt();
+                    double idf = buffer.getDouble();
+                    double maxTFIDF = buffer.getDouble();
+                    double maxBM25 = buffer.getDouble();
 
                     writer.write("Term: " + term + "\n");
                     writer.write("Document Frequency (df): " + df + "\n");
@@ -423,6 +427,9 @@ public class SPIMI {
                     writer.write("Offset Freq: " + offsetFreq + "\n");
                     writer.write("Length: " + lengthDoc + "\n");
                     writer.write("LengthFreq: " + lengthFreq + "\n");
+                    writer.write("MaxTF: " + maxTF +"\n");
+                    writer.write("OffsetSkip:" + offsetSkip+ "\n");
+                    writer.write("skipLen:" + skipLen + "\n");
                     writer.write("-------------------------\n");
                 } else {
                     writer.write("Partial read or end of file reached. Exiting.\n");
