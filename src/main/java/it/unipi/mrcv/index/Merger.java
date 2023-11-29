@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import static it.unipi.mrcv.global.Global.skippingFile;
+
 //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
 public class Merger {
 
@@ -44,6 +46,8 @@ public class Merger {
         // latestDocOff and latestFreqOff are used to store the offset of the latest vocabulary entry
         long latestDocOff;
         long latestFreqOff;
+        // offset of the skip information
+        long skipOff = 0;
         // termNumber is used to store the number of the vocabulary entry, used to write the vocabulary at the correct position
         long termNumber = 0;
         // temporaryDocIds and temporaryFreqs are used to store the docIds and frequencies of the current vocabulary entry
@@ -51,10 +55,12 @@ public class Merger {
         List<Integer> temporaryFreqs = new ArrayList<>();
         // pQueueElems is used to store the first vocabulary entry of each partial vocabulary, all added to the priority queue
         List<termBlock> pQueueElems = new ArrayList<>();
-        // docsBuffer, freqsBuffer and vocBuffer are used to write the docIds, frequencies and vocabulary entries in the final files
+        // docsBuffer, freqsBuffer, vocBuffer and skipBuffer are used to write the docIds,
+        // frequencies, vocabulary entries and skipping information in the final files
         MappedByteBuffer docsBuffer;
         MappedByteBuffer freqsBuffer;
         MappedByteBuffer vocBuffer;
+        MappedByteBuffer skipBuffer;
         // docPointers, freqPointers and vocPointers are used to store the pointers to the partial vocabularies
         List<RandomAccessFile> docPointers = new ArrayList<>();
         List<RandomAccessFile> freqPointers = new ArrayList<>();
@@ -85,7 +91,7 @@ public class Merger {
 
                 pQueueElems.add(new termBlock());
 
-                readEntryFromDictionary(p, i, pQueueElems.get(i), termBytes);
+                readSPIMIEntryFromDictionary(p, i, pQueueElems.get(i), termBytes);
                 pQueue.add(pQueueElems.get(i));
 
             } catch (FileNotFoundException e) {
@@ -110,7 +116,11 @@ public class Merger {
                 FileChannel vocabularyFchan = (FileChannel) Files.newByteChannel(Paths.get(pathVoc),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
-                        StandardOpenOption.CREATE)) {
+                        StandardOpenOption.CREATE);
+                FileChannel skipFchan = (FileChannel) Files.newByteChannel(Paths.get(skippingFile),
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.CREATE)){
 
 
             // the whole merge is done in this while loop
@@ -127,7 +137,7 @@ public class Merger {
                 readLineFromFreq(freqPointers.get(temporaryElem.getNumBlock()), temporaryElem.getDictionaryElem().getLengthFreq(), temporaryFreqs);
                 // if the block is not finished, the next vocabulary entry is read and added to the priority queue
                 if (!isEndOfFile(vocPointers.get(currentBlock.getNumBlock()))) {
-                    readEntryFromDictionary(vocPointers.get(currentBlock.getNumBlock()), currentBlock.getNumBlock(), pQueueElems.get(currentBlock.getNumBlock()), termBytes);
+                    readSPIMIEntryFromDictionary(vocPointers.get(currentBlock.getNumBlock()), currentBlock.getNumBlock(), pQueueElems.get(currentBlock.getNumBlock()), termBytes);
                     pQueue.add(pQueueElems.get(currentBlock.getNumBlock()));
                 }
 
@@ -146,7 +156,7 @@ public class Merger {
                     if (isEndOfFile(vocPointers.get(blockNumber))) {
                         continue;
                     }
-                    readEntryFromDictionary(vocPointers.get(blockNumber), blockNumber, pQueueElems.get(blockNumber), termBytes);
+                    readSPIMIEntryFromDictionary(vocPointers.get(blockNumber), blockNumber, pQueueElems.get(blockNumber), termBytes);
                     pQueue.add(pQueueElems.get(blockNumber));
                 }
 
@@ -200,18 +210,31 @@ public class Merger {
                         skipElem.setOffsetFreq(latestFreqOff + freqStep);
                         skipElem.setFreqBlockLen(blockLength);
                         skipList.add(skipElem);
-                    }
 
+                    }
+                    // write the skipList in the skip file
+                    skipBuffer = skipFchan.map(FileChannel.MapMode.READ_WRITE, skipOff, skipList.size() * SkipElem.size());
+                    // call the method to write the skipList in the file
+                    for(int i = 0; i < skipList.size(); i++){
+                        skipList.get(i).writeToFile(skipBuffer);
+                    }
+                    // update the statistics of the temporaryElem
+                    temporaryElem.getDictionaryElem().setOffsetSkip(skipOff);
+                    temporaryElem.getDictionaryElem().setSkipLen(skipList.size());
+                    // update the offset of the skip information
+                    skipOff += skipList.size() * SkipElem.size();
+                    // clear the skipList
+                    skipList.clear();
                 }
                 else {
                     // if the block is too small, the skipList is empty
-                    skipList.clear();
-
+                    temporaryElem.getDictionaryElem().setOffsetSkip(0);
+                    temporaryElem.getDictionaryElem().setSkipLen(0);
                 }
                 
                 temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
                 temporaryElem.getDictionaryElem().setOffsetDoc(latestDocOff);
-                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.SPIMIsize(), DictionaryElem.SPIMIsize());
+                vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.size(), DictionaryElem.size());
                 termNumber++;
                 temporaryElem.getDictionaryElem().writeElemToDisk(vocBuffer);
                 temporaryDocIds.clear();
@@ -227,7 +250,7 @@ public class Merger {
     }
 
     // method to read an entry from a vocabulary using the input array for the term and writing the entry in the input termBlock
-    public static void readEntryFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
+    public static void readSPIMIEntryFromDictionary(RandomAccessFile raf, int n, termBlock readBlock, byte[] termBytes) throws IOException {
         // Read 40 bytes into a byte array
         ByteBuffer vocBuffer = ByteBuffer.allocate(DictionaryElem.SPIMIsize());
         while (vocBuffer.hasRemaining()) {
@@ -245,23 +268,17 @@ public class Merger {
         // Read next 8 bytes into a long
         long long1 = vocBuffer.getLong();
 
-        // Read next 8 bytes into a long
-        long long2 = vocBuffer.getLong();
-
         // Read next 4 bytes into an int
         int int3 = vocBuffer.getInt();
-
-        int int4=vocBuffer.getInt();
-
 
         readBlock.setNumBlock(n);
         readBlock.getDictionaryElem().setTerm(SPIMI.decodeTerm(termBytes));
         readBlock.getDictionaryElem().setDf(int1);
         readBlock.getDictionaryElem().setCf(int2);
         readBlock.getDictionaryElem().setOffsetDoc(long1);
-        readBlock.getDictionaryElem().setOffsetFreq(long2);
+        readBlock.getDictionaryElem().setOffsetFreq(long1);
         readBlock.getDictionaryElem().setLengthDocIds(int3);
-        readBlock.getDictionaryElem().setLengthFreq(int4);
+        readBlock.getDictionaryElem().setLengthFreq(int3);
         //readBlock.getDictionaryElem().printDebug();
     }
 

@@ -20,7 +20,7 @@ public class Dictionary {
         return  dictionary.get(term);
     }
 
-    public long size() {
+    public long SPIMIsize() {
         return dictionary.size()*DictionaryElem.SPIMIsize();
 
     }

@@ -57,6 +57,9 @@ public class DictionaryElem {
         this.maxTF = 0;
         this.offsetSkip = 0;
         this.skipLen = 0;
+        this.idf = 0;
+        this.maxTFIDF = 0;
+        this.maxBM25 = 0;
     };
 
     // set methods
@@ -166,12 +169,18 @@ public class DictionaryElem {
 
     public double getMaxBM25() { return maxBM25; }
 
+    public double getIdf() { return idf; }
+
+    public double getMaxTFIDF() { return maxTFIDF; }
+
+    // return the size of the term with only the features used in the SPIMI algorithm
     public static int SPIMIsize(){
-        return 72; // size of everything needed for the SPIMI algorithm
+        return 60;
     }
 
+    // return the size of the whole dictionary element
     public static int size(){
-        return 88; // size of everything in the class
+        return 112;
     }
 
     public void writeElemToDisk(MappedByteBuffer vocBuffer){
@@ -199,6 +208,41 @@ public class DictionaryElem {
         vocBuffer.putInt(cf);
         vocBuffer.putLong(offsetDoc);
         vocBuffer.putLong(offsetFreq);
+        vocBuffer.putInt(lengthDocIds);
+        vocBuffer.putInt(lengthFreq);
+        vocBuffer.putInt(maxTF);
+        vocBuffer.putLong(offsetSkip);
+        vocBuffer.putInt(skipLen);
+        vocBuffer.putDouble(idf);
+        vocBuffer.putDouble(maxTFIDF);
+        vocBuffer.putDouble(maxBM25);
+
+    }
+
+    public void writeSPIMIElemToDisk(MappedByteBuffer vocBuffer){
+        CharBuffer charBuffer = CharBuffer.allocate(40);
+        String term = this.term;
+        for (int i = 0; i < term.length() && i < 40; i++)
+            charBuffer.put(i, term.charAt(i));
+
+        // Write the term into file
+        ByteBuffer truncatedBuffer = ByteBuffer.allocate(40); // Allocate buffer for 40 bytes
+        // Encode the CharBuffer into a ByteBuffer
+        ByteBuffer encodedBuffer = StandardCharsets.UTF_8.encode(charBuffer);
+        // Ensure the buffer is at the start before reading from it
+        encodedBuffer.rewind();
+        // Transfer bytes to the new buffer
+        for (int i = 0; i < 40; i++) {
+            truncatedBuffer.put(encodedBuffer.get(i));
+        }
+
+        truncatedBuffer.rewind();
+        vocBuffer.put(truncatedBuffer);
+
+        // write statistics
+        vocBuffer.putInt(df);
+        vocBuffer.putInt(cf);
+        vocBuffer.putLong(offsetDoc);
         vocBuffer.putInt(lengthDocIds);
         vocBuffer.putInt(lengthFreq);
 

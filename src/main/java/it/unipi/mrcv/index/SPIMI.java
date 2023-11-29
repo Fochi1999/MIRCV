@@ -146,7 +146,7 @@ public class SPIMI {
             // instantiation of MappedByteBuffer for integer list of freqs
             MappedByteBuffer freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for vocabulary
-            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.size());
+            MappedByteBuffer vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, 0, dictionary.SPIMIsize());
 
             // write the docIndexList on disk by appending on the docIndex file
             for (int i = 0; i < docIndexList.size(); i++) {
@@ -159,7 +159,6 @@ public class SPIMI {
                 // update the offset of the term in the dictionary
                 DictionaryElem dictionaryElem = dictionary.getElem(entry.getKey());
                 dictionaryElem.setOffsetDoc(docsBuffer.position());
-                dictionaryElem.setOffsetFreq(freqsBuffer.position());
                 int counter = 0;
                 // write the postings in the respective docIds and frequencies files
                 for (Posting posting : entry.getValue().getPostings()) {
@@ -171,7 +170,7 @@ public class SPIMI {
                 // update the length of the posting list in the dictionary
                 dictionaryElem.setLengthDocIds(counter);
                 dictionaryElem.setLengthFreq(counter);
-                dictionaryElem.writeElemToDisk(vocBuffer);
+                dictionaryElem.writeSPIMIElemToDisk(vocBuffer);
 
 
             }
@@ -219,17 +218,18 @@ public class SPIMI {
             e.printStackTrace();
         }
     }
-    public static void readCompressedDic(String path) {
+    public static void readDictionaryAndPostingCompressed(String path) {
 
-            readCompressedDic(path,null,null);
+        readDictionaryAndPostingCompressed(path,null,null);
 
     }
 
-    public static void readCompressedDic(String path,String path2) {
-        readCompressedDic(path,path2,null);
+    public static void readDictionaryAndPostingCompressed(String path,String path2) {
+        readDictionaryAndPostingCompressed(path,path2,null);
     }
 
-    public static void readCompressedDic(String path,String path2,String path3){
+    // debugging function utilized to read the dictionary and its compressed postinglists
+    public static void readDictionaryAndPostingCompressed(String path,String path2,String path3){
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
 

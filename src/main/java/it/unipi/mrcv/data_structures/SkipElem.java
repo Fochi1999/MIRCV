@@ -1,5 +1,7 @@
 package it.unipi.mrcv.data_structures;
 
+import java.nio.MappedByteBuffer;
+
 public class SkipElem {
     // Last docID in the block
     private int docID;
@@ -66,5 +68,20 @@ public class SkipElem {
     public int getFreqBlockLen() {
         return freqBlockLen;
     }
+
+    // return the size of the skipping element
+    public static int size() {
+        return Integer.BYTES + Long.BYTES + Integer.BYTES + Long.BYTES + Integer.BYTES;
+    }
+
+    // write the skip element to the file using the mapped byte buffer
+    public void writeToFile(MappedByteBuffer buffer) {
+        buffer.putInt(docID);
+        buffer.putLong(offsetDoc);
+        buffer.putInt(docBlockLen);
+        buffer.putLong(offsetFreq);
+        buffer.putInt(freqBlockLen);
+    }
+
 
 }
