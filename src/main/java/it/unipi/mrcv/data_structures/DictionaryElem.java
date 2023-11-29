@@ -106,7 +106,13 @@ public class DictionaryElem {
     public void setIdf() {
         this.idf = Math.log10(collectionLength / (double)this.df);
     }
+    public void setIdf(double idf) {
+        this.idf = idf;
+    }
 
+    public void setMaxTFIDF(double maxTFIDF) {
+        this.maxTFIDF = maxTFIDF;
+    }
     public void setMaxTFIDF() {
         this.maxTFIDF = (1 + Math.log10(this.maxTF)) * this.idf;
     }
