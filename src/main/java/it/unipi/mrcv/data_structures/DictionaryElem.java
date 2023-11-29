@@ -244,7 +244,7 @@ public class DictionaryElem {
         vocBuffer.putInt(cf);
         vocBuffer.putLong(offsetDoc);
         vocBuffer.putInt(lengthDocIds);
-        vocBuffer.putInt(lengthFreq);
+
 
     }
 

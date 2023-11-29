@@ -2,6 +2,7 @@ package it.unipi.mrcv.compression;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static java.lang.Math.log;
 
@@ -48,6 +49,17 @@ public class VariableByte {
         return ret;
     }*/
     public static byte[] fromArrayIntToVarByte(ArrayList<Integer> input){
+        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
+        for (int number : input)
+            buf.put(fromIntToVarByte(number));
+
+        buf.flip();
+        byte[] ret = new byte[buf.remaining()];
+        buf.get(ret);
+
+        return ret;
+    }
+    public static byte[] fromArrayIntToVarByte(List<Integer> input){
         ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
         for (int number : input)
             buf.put(fromIntToVarByte(number));

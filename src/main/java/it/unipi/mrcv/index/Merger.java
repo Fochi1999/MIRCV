@@ -27,8 +27,8 @@ public class Merger {
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
 
-    //public static int num_blocks = 8;
-    public static int num_blocks = SPIMI.counterBlock;
+    public static int num_blocks = 8;
+    //public static int num_blocks = SPIMI.counterBlock;
     //flag compression
     public static boolean compression=Global.compression;
 
@@ -197,11 +197,21 @@ public class Merger {
                     for(int i = 0; i < temporaryDocIds.size(); i += blockLength){
                         // the step is the number of bytes needed to store the block, it varies based on the compression
                         int docStep = (compression == true) ?
-                                VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size()))).length :
+                                VariableByte.fromArrayIntToVarByte(new ArrayList<Integer>( temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size())))).length :
                                 blockLength * 4;
                         int freqStep = (compression == true)?
-                                Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size()))).length :
+                                Unary.ArrayIntToUnary(new ArrayList<Integer>(temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size())))).length :
                                 blockLength * 4;
+                        if(compression==true){
+                            //method 1
+
+                            //method 2
+                            //VariableByte.fromArrayIntToVarByte( temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size())));
+                        }
+                        else{
+                            docStep=blockLength*4;
+                            freqStep=blockLength*4;
+                        }
                         // create the skip element and add it to the skipList
                         SkipElem skipElem = new SkipElem();
                         skipElem.setDocID(temporaryDocIds.get(i));

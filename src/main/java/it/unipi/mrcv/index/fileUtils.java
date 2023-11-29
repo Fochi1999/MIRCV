@@ -62,18 +62,24 @@ public class fileUtils {
     }
     public static DictionaryElem binarySearchOnFile(String path,String term){
         DictionaryElem ret=new DictionaryElem();
+        int step=DictionaryElem.size();
         long firstPos=0;
         long currentPos;
         long lastPos;
         String res;
-        int entrySize=DictionaryElem.size();
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
                 StandardOpenOption.READ)) {
-                lastPos=vocFchan.size();
-                currentPos=lastPos/2;
+            lastPos=vocFchan.size()/step;
+            currentPos=(firstPos+lastPos)/2;
+            //leggi da dictionary la entry corrispondente a currentPos*step,
+
         }catch(Exception e){
 
         }
         return ret;
+    }
+
+    public static DictionaryElem readEntryDictionary(String path,long offset){
+        return new DictionaryElem();
     }
 }

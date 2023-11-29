@@ -235,12 +235,7 @@ public class SPIMI {
 
             // Size for each term in bytes
             int termSize = 40;
-            // Sizes for the other integers and longs
-            int intSize = Integer.BYTES; // 4 bytes
-            int longSize = Long.BYTES;   // 8 bytes
-            // Total SPIMIsize of one dictionary entry
-            int entrySize = termSize + 4 * intSize + 2 * longSize;
-
+            int entrySize = DictionaryElem.size();
             ByteBuffer buffer = ByteBuffer.allocate(entrySize);
 
             while (vocFchan.read(buffer) != -1) {
@@ -259,7 +254,12 @@ public class SPIMI {
                     long offsetFreq = buffer.getLong();
                     int lengthDoc = buffer.getInt();
                     int lengthFreq = buffer.getInt();
-
+                    int maxTF = buffer.getInt();
+                    long offsetSkip = buffer.getLong();
+                    int skipLen = buffer.getInt();
+                    double idf = buffer.getDouble();
+                    double maxTFIDF = buffer.getDouble();
+                    double maxBM25 = buffer.getDouble();
                     // Print the details
                     System.out.println("Term: " + term);
                     System.out.println("Document Frequency (df): " + df);

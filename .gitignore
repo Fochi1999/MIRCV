@@ -71,3 +71,8 @@ vocabulary
 frequenciesCompressed
 docIdsCompressed
 vocabularyCompressed
+skipping
+docIndex
+vocz.txt
+src/main/java/it/unipi/mrcv/Main.java
+src/main/java/it/unipi/mrcv/Main.java

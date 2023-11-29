@@ -18,7 +18,7 @@ public class Global {
     public static final String finalFreqCompressed="frequenciesCompressed";
     public static final String finalStopWordsFile="stopwords-en.txt";
     public static boolean compression=true;
-    public static boolean stem=false;
+    public static boolean stem=true;
     public static boolean stopWords=false;
     public static int collectionLength;
     public static List<String> stopWordsList;
