@@ -29,6 +29,7 @@ public class Merger {
     //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
 
     public static int num_blocks = SPIMI.counterBlock;
+
     //flag compression
     public static boolean compression=Global.compression;
 
@@ -67,6 +68,7 @@ public class Merger {
         List<RandomAccessFile> vocPointers = new ArrayList<>();
         // docIndex is the file containing the document lengths
         RandomAccessFile docIndex = new RandomAccessFile(Global.prefixDocIndex, "r");
+        // docLengths is the array containing the document lengths
         int[] docLengths = new int[collectionLength];
         // pQueue is the priority queue used to store the vocabulary entries
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
@@ -103,7 +105,15 @@ public class Merger {
                 throw new RuntimeException(e);
             }
         }
-        
+
+        // populate the docLengths array with the document lengths
+        for (int i = 0; i < collectionLength; i++) {
+            docIndex.seek(i * 12 + 8);
+            System.out.println(i);
+            docLengths[i] = docIndex.readInt();
+        }
+        // close the docIndex file
+        docIndex.close();
 
 
         // initialize the final files
@@ -175,10 +185,7 @@ public class Merger {
                 temporaryElem.getDictionaryElem().computeMaxTFIDF();
                 // for each document in the posting list of temporaryElem, open the docIndex file, retrieve the documentLength and compute the BM25
                 for (int i = 0; i < temporaryDocIds.size(); i++) {
-                    // access docIndex file at offset docId * 12 + 4
-                    docIndex.seek(temporaryDocIds.get(i) * 12 + 4);
-                    // read the document length
-                    int docLength = docIndex.readInt();
+                    int docLength = docLengths[temporaryDocIds.get(i)];
                     temporaryElem.getDictionaryElem().computeMaxBM25(docLength);
                 }
 

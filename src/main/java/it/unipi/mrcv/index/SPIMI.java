@@ -53,8 +53,6 @@ public class SPIMI {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
         // read the first line
         String line = reader.readLine();
-        // increase the stored collection length
-        collectionLength++;
         // instantiate the averageDocLength
         averageDocLength = 0;
 

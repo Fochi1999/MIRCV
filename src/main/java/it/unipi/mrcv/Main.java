@@ -17,7 +17,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
 
         long startTime = System.currentTimeMillis(); // Capture start time
-        SPIMI.exeSPIMI("collection.tsv");
+        //SPIMI.exeSPIMI("collection.tsv");
         Merger.Merge();
 
         long endTime = System.currentTimeMillis(); // Capture end time
