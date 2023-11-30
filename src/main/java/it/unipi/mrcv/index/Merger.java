@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import static it.unipi.mrcv.global.Global.collectionLength;
 import static it.unipi.mrcv.global.Global.skippingFile;
 
 //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
@@ -66,6 +67,7 @@ public class Merger {
         List<RandomAccessFile> vocPointers = new ArrayList<>();
         // docIndex is the file containing the document lengths
         RandomAccessFile docIndex = new RandomAccessFile(Global.prefixDocIndex, "r");
+        int[] docLengths = new int[collectionLength];
         // pQueue is the priority queue used to store the vocabulary entries
         PriorityQueue<termBlock> pQueue = new PriorityQueue<termBlock>(num_blocks, new ComparatorTerm());
         // blockLength is the length of the blocks used for skipping
@@ -80,15 +82,14 @@ public class Merger {
         // initialize the pointers to the partial vocabularies and the priority queue
         for (int i = 0; i < num_blocks; i++) {
             try {
-                // TODO: check the pointers (always p)
                 RandomAccessFile p = new RandomAccessFile(Global.prefixVocFiles + i, "r");
                 p.seek(0); //set the pointer to 0
                 vocPointers.add(p);
                 RandomAccessFile d = new RandomAccessFile(Global.prefixDocFiles + i, "r");
-                p.seek(0); //set the pointer to 0
+                d.seek(0); //set the pointer to 0
                 docPointers.add(d);
                 RandomAccessFile q = new RandomAccessFile(Global.prefixFreqFiles + i, "r");
-                p.seek(0); //set the pointer to 0
+                q.seek(0); //set the pointer to 0
                 freqPointers.add(q);
 
                 pQueueElems.add(new termBlock());
@@ -102,6 +103,7 @@ public class Merger {
                 throw new RuntimeException(e);
             }
         }
+        
 
 
         // initialize the final files
@@ -150,9 +152,6 @@ public class Merger {
                     int blockNumber = currentBlock.getNumBlock();
                     temporaryElem.getDictionaryElem().setDf(temporaryElem.getDictionaryElem().getDf() + currentBlock.getDictionaryElem().getDf());
                     temporaryElem.getDictionaryElem().setCf(temporaryElem.getDictionaryElem().getCf() + currentBlock.getDictionaryElem().getCf());
-                    // TODO: check if the length of the docIds and frequencies is correct
-                    temporaryElem.getDictionaryElem().setLengthDocIds(temporaryElem.getDictionaryElem().getLengthDocIds() + currentBlock.getDictionaryElem().getLengthDocIds());
-                    temporaryElem.getDictionaryElem().setLengthDocIds(temporaryElem.getDictionaryElem().getLengthFreq() + currentBlock.getDictionaryElem().getLengthFreq());
                     readLineFromDocId(docPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDocIds(), temporaryDocIds);
                     readLineFromFreq(freqPointers.get(blockNumber), currentBlock.getDictionaryElem().getLengthDocIds(), temporaryFreqs);
 
