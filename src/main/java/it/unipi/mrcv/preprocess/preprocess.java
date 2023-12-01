@@ -35,8 +35,9 @@ public class preprocess {
     }
 
     private static ArrayList<String> stopWords(ArrayList<String> tokens) {
-        tokens.removeAll(Global.stopWordsList);
-        return tokens;
+        return tokens.stream()
+                .filter(token -> !Global.stopWordsSet.contains(token))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public static ArrayList<String> stem(ArrayList<String> tokens){
