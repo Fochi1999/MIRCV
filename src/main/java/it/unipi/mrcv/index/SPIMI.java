@@ -36,7 +36,7 @@ public class SPIMI {
     public static InvertedIndex postingLists = new InvertedIndex();
 
     // list that stores the docIndex
-    public static List<Integer> docIndexList = new ArrayList<>();
+    public static List<DocIndexElem> docIndexList = new ArrayList<>();
 
     // docIndex offset
     public static long offsetDocIndex = 0;
@@ -48,7 +48,7 @@ public class SPIMI {
         // docIds start from 0
         int docId = 0;
         // variable that stores the current docNumber
-        int documentNumber = 0;
+        String documentNumber = null;
         // read the document collection line by line
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
         // read the first line
@@ -64,7 +64,9 @@ public class SPIMI {
             // split the line in two parts: the first is the document number, the second is the text
             String[] parts = line.split("\t", 2);
             try {
-                documentNumber = Integer.parseInt(parts[0]);
+                int number = Integer.parseInt(parts[0]);
+                // document number is saved as string with 7 digits
+                documentNumber = String.format("%07d", number);
             } catch (NumberFormatException e) {
                 System.err.println("The first part is not an integer. Exiting.");
                 System.exit(1);
@@ -72,11 +74,9 @@ public class SPIMI {
 
             // preprocess the line and obtain the tokens
             List<String> tokens = preprocess.all(parts[1]);
-            // TODO: avoid writing the docId in the docIndexList otherwise Tonellotto will kill us
-            // write the docId, the document number and the document length in the docIndexList
-            docIndexList.add(docId);
-            docIndexList.add(documentNumber);
-            docIndexList.add(tokens.size());
+
+            // insert docNumber and docLength in the list of DocIndexElems
+            docIndexList.add(new DocIndexElem(documentNumber, tokens.size()));
 
             // increase the averageDocLength
             averageDocLength += tokens.size();
@@ -152,7 +152,7 @@ public class SPIMI {
         ) {
 
             // instantiation of MappedByteBuffer for integer list of docIndex
-            MappedByteBuffer docIndexBuffer = docIndexFchan.map(FileChannel.MapMode.READ_WRITE, offsetDocIndex, docIndexList.size() * 4);
+            MappedByteBuffer docIndexBuffer = docIndexFchan.map(FileChannel.MapMode.READ_WRITE, offsetDocIndex, docIndexList.size() * 11);
             // instantiation of MappedByteBuffer for integer list of docids
             MappedByteBuffer docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, 0, numPosting * 4);
             // instantiation of MappedByteBuffer for integer list of freqs
@@ -162,10 +162,11 @@ public class SPIMI {
 
             // write the docIndexList on disk by appending on the docIndex file
             for (int i = 0; i < docIndexList.size(); i++) {
-                docIndexBuffer.putInt(docIndexList.get(i));
+                docIndexBuffer.put(docIndexList.get(i).getDocumentNumber().getBytes());
+                docIndexBuffer.putInt(docIndexList.get(i).getDocLength());
             }
             // update the offset of the docIndex
-            offsetDocIndex += docIndexList.size() * 4;
+            offsetDocIndex += docIndexList.size() * 11;
 
             // for each term in the term-postingList treemap write everything to file
             for (Map.Entry<String, PostingList>

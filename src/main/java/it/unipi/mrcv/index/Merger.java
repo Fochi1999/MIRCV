@@ -108,7 +108,7 @@ public class Merger {
 
         // populate the docLengths array with the document lengths
         for (int i = 0; i < collectionLength; i++) {
-            docIndex.seek(i * 12 + 8);
+            docIndex.seek(i * 11 + 7);
             System.out.println(i);
             docLengths[i] = docIndex.readInt();
         }
