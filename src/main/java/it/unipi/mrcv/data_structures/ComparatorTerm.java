@@ -1,4 +1,6 @@
-package it.unipi.mrcv.index;
+package it.unipi.mrcv.data_structures;
+
+import it.unipi.mrcv.data_structures.termBlock;
 
 // comparator for the termBlock class used in the priority queue for the merger
 public class ComparatorTerm  implements java.util.Comparator<termBlock> {

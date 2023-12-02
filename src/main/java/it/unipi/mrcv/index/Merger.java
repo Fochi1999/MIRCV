@@ -2,8 +2,10 @@ package it.unipi.mrcv.index;
 
 import it.unipi.mrcv.compression.Unary;
 import it.unipi.mrcv.compression.VariableByte;
+import it.unipi.mrcv.data_structures.ComparatorTerm;
 import it.unipi.mrcv.data_structures.DictionaryElem;
 import it.unipi.mrcv.data_structures.SkipElem;
+import it.unipi.mrcv.data_structures.termBlock;
 import it.unipi.mrcv.global.Global;
 
 import java.io.FileNotFoundException;
@@ -21,12 +23,11 @@ import java.util.PriorityQueue;
 
 import static it.unipi.mrcv.global.Global.collectionLength;
 import static it.unipi.mrcv.global.Global.skippingFile;
-
+//TODO create collectionInfo.txt file with collection length and average doc length
 //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
 public class Merger {
 
     //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
-    //apri tutti i file voc_x e tieni un puntatore per ogni file, leggi l'elemento in ordine alfabetico che viene prima
 
     public static int num_blocks = SPIMI.counterBlock;
 

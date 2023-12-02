@@ -34,5 +34,15 @@ public class Global {
             System.out.println("Can't read Stopword file, flag stopwords set to false");
             stopWords = false;
         }
+        // load collection length and average doc length
+        try {
+            List<String> collectionInfo = Files.readAllLines(Paths.get("collectionInfo.txt"));
+            collectionLength = Integer.parseInt(collectionInfo.get(0));
+            averageDocLength = Double.parseDouble(collectionInfo.get(1));
+        } catch (IOException e) {
+            System.out.println("Can't read collectionInfo file");
+        }
+
+
     }
 }

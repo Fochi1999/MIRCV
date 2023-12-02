@@ -1,6 +1,4 @@
-package it.unipi.mrcv.index;
-
-import it.unipi.mrcv.data_structures.DictionaryElem;
+package it.unipi.mrcv.data_structures;
 
 public class termBlock {
     // dictionaryElem of the term
