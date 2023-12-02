@@ -261,5 +261,13 @@ public class DictionaryElem {
         System.out.println("df: "+df);
         System.out.println("docLength: "+ lengthDocIds);
         System.out.println("freqLength: "+lengthFreq);
+        System.out.println("offsetDoc: "+offsetDoc);
+        System.out.println("offsetFreq: "+offsetFreq);
+        System.out.println("offsetSkip: "+offsetSkip);
+        System.out.println("skipLen: "+skipLen);
+        System.out.println("maxTF: "+maxTF);
+        System.out.println("idf: "+idf);
+        System.out.println("maxTFIDF: "+maxTFIDF);
+        System.out.println("maxBM25: "+maxBM25);
     }
 }

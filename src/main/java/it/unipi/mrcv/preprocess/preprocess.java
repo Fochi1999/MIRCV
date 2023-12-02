@@ -18,8 +18,10 @@ import java.util.stream.Stream;
 public class preprocess {
     public static ArrayList<String> all(String text) {
         ArrayList<String> ret;
-        text=removePuntuaction(text);
         text=lowercase(text);
+        text = text.replaceAll("https?://\\S+\\s?", " ");
+        text = text.replaceAll("<[^>]*>", "");
+        text=removePuntuaction(text);
         text=removeUnicode(text);
         text=text.replaceAll("\\s+", " "); //remove extra whitespaces
         ret=tokenize(text);
@@ -63,17 +65,6 @@ public class preprocess {
     public static String removePuntuaction(String text){
         String result = text.replaceAll("\\p{Punct}", " ");
         return result;
-    }
-
-    public static String StopWordRemoval(ArrayList<String> stopwordsList, ArrayList<String> words){
-        HashSet<String> stopwords = new HashSet<>(stopwordsList);
-        StringBuilder result = new StringBuilder();
-        for (String word : words) {
-            if (!stopwords.contains(word)) {
-                result.append(word).append(" ");
-            }
-        }
-        return result.toString().trim();
     }
 
     public static String removeUnicode(String text){

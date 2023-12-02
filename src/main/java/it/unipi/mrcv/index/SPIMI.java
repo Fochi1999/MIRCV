@@ -233,96 +233,7 @@ public class SPIMI {
             e.printStackTrace();
         }
     }
-    public static void readDictionaryAndPostingCompressed(String path) {
 
-        readDictionaryAndPostingCompressed(path,null,null);
-
-    }
-
-    public static void readDictionaryAndPostingCompressed(String path,String path2) {
-        readDictionaryAndPostingCompressed(path,path2,null);
-    }
-
-    // debugging function utilized to read the dictionary and its compressed postinglists
-    public static void readDictionaryAndPostingCompressed(String path,String path2,String path3){
-        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
-                StandardOpenOption.READ)) {
-
-            // Size for each term in bytes
-            int termSize = 40;
-            int entrySize = DictionaryElem.size();
-            ByteBuffer buffer = ByteBuffer.allocate(entrySize);
-
-            while (vocFchan.read(buffer) != -1) {
-                buffer.flip(); // Prepare the buffer for reading
-
-                if (buffer.remaining() >= entrySize) {
-                    // Read term
-                    byte[] termBytes = new byte[termSize];
-                    buffer.get(termBytes);
-                    String term = decodeTerm(termBytes);
-
-                    // Read statistics
-                    int df = buffer.getInt();
-                    int cf = buffer.getInt();
-                    long offsetDoc = buffer.getLong();
-                    long offsetFreq = buffer.getLong();
-                    int lengthDoc = buffer.getInt();
-                    int lengthFreq = buffer.getInt();
-                    int maxTF = buffer.getInt();
-                    long offsetSkip = buffer.getLong();
-                    int skipLen = buffer.getInt();
-                    double idf = buffer.getDouble();
-                    double maxTFIDF = buffer.getDouble();
-                    double maxBM25 = buffer.getDouble();
-                    // Print the details
-                    System.out.println("Term: " + term);
-                    System.out.println("Document Frequency (df): " + df);
-                    System.out.println("Collection Frequency (cf): " + cf);
-                    System.out.println("Offset Doc: " + offsetDoc);
-                    System.out.println("Offset Freq: " + offsetFreq);
-                    System.out.println("LengthDoc: " + lengthDoc);
-                    System.out.println("LengthFreq: " + lengthFreq);
-                    if(path2!=null) {
-                        System.out.print("DocIds: ");
-                        readFromCompressedDocIds(path2, lengthDoc,  offsetDoc);
-                        System.out.println("");
-                    }
-                    if(path3!=null){
-                        System.out.print("Frequencies: ");
-                        readFromCompressedFrequencies(path3,lengthFreq,offsetFreq);
-                    }
-
-                    System.out.println("-------------------------");
-                } else {
-                    // Not enough data for a full dictionary entry, handle partial read or end of file
-                    System.err.println("Partial read or end of file reached. Exiting.");
-                    break;
-                }
-
-                buffer.clear(); // Clear the buffer for the next read
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private static void readFromCompressedFrequencies(String path3, int lengthFreq, long offsetFreq) {
-        try{
-            RandomAccessFile raf=new RandomAccessFile(new File(path3),"r");
-            byte[] b=new byte[lengthFreq];
-            raf.seek(offsetFreq);
-            raf.read(b);
-            ArrayList<Integer> ret= Unary.unaryToArrayInt(b);
-            for(int x: ret){
-                System.out.print(x+" ");
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public static void readDictionary(String path) {
         try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
@@ -376,21 +287,7 @@ public class SPIMI {
             e.printStackTrace();
         }
     }
-    public static void readFromCompressedDocIds(String path,int length,long offset){
-        try{
-            RandomAccessFile raf=new RandomAccessFile(new File(path),"r");
-            byte[] b=new byte[length];
-            raf.seek(offset);
-            raf.read(b);
-            ArrayList<Integer> ret=VariableByte.fromByteToArrayInt(b);
-            for(int x: ret){
-                System.out.print(x+" ");
-            }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     // function that decodes the term from the byte array
     public static String decodeTerm(byte[] termBytes) {
