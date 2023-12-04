@@ -22,8 +22,13 @@ public class Main {
         Merger.Merge();*/
         Global.load();
         ArrayList<String> query = new ArrayList<>();
-        query.add("test");
-        query.add("result");
+        query.add("appl");
+        query.add("cat");
+        query.add("dog");
+        query.add("eat");
+        query.add("food");
+        query.add("war");
+
 
         long startTime = System.currentTimeMillis(); // Capture start time
 
