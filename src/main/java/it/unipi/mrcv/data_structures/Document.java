@@ -15,11 +15,16 @@ public class Document {
         return docId;
     }
     public void calculateScoreBM25(double idf, int tf, int docLength) {
-        score += idf * (tf * (1.0 + 1.2) / (tf + 1.2 * (0.25 + 0.75 * docLength / averageDocLength))); //TODO copy from dictionaryElem
+        double k1 = 1.2;
+        double b = 0.75;
+        double numerator = tf * (k1 + 1);
+        double denominator = tf + k1 * (1 - b + b * (docLength / averageDocLength));
+        this.score += idf * numerator / denominator;
     }
+
     public void calculateScoreTFIDF(double idf, int tf) {
 
-        score += idf * (1 + Math.log10(tf));
+        this.score += idf * (1 + Math.log10(tf));
     }
 
     public double getScore() {
