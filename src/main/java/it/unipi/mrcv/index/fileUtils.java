@@ -347,19 +347,18 @@ public class fileUtils {
         return ret;
     }
 
-    // Function that reads the docLength of a document given the docId from the docIndex file
-    public static int getDocLength(int docId){
-        int docLength = 0;
+    // Function that reads the docNumber of a document from the docIndex file given the docId
+    public static String getDocNumber(int docId) {
+        String docNumber = "";
         try {
             RandomAccessFile raf = new RandomAccessFile(new File(Global.prefixDocIndex), "r");
-            byte[] b = new byte[4];
-            raf.seek(docId * 11 + 7);
+            byte[] b = new byte[7];
+            raf.seek(docId * 11);
             raf.read(b);
-            docLength = ByteBuffer.wrap(b).getInt();
+            docNumber = new String(b);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return docLength;
+        return docNumber;
     }
-
 }
