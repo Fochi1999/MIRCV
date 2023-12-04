@@ -7,6 +7,8 @@ import it.unipi.mrcv.index.fileUtils;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
+import static it.unipi.mrcv.global.Global.docLengths;
+
 public class DAAT {
     public static PriorityQueue<Document> executeDAAT(ArrayList<String> queryTerms, int k) {
         // Create a priority queue of documents; this will be used to order documents from lowest to highest score
@@ -26,7 +28,7 @@ public class DAAT {
         for (String term : queryTerms) {
             // get the dictionaryElem of the term using the binary search and set the posting list
             PostingList pl = new PostingList();
-            DictionaryElem elem = fileUtils.binarySearchOnFile(term, "vocabularyCompressed", pl);
+            DictionaryElem elem = fileUtils.binarySearchOnFile("vocabularyCompressed", term, pl);
             // If the term is not in the dictionary, skip it
             if (elem == null) {
                 continue;
@@ -55,8 +57,6 @@ public class DAAT {
 
             // Create a new document; its score will be computed, and it will be added to the priority queue
             Document d = new Document(minDocId, 0);
-            // Get the document length of the document with docId = minDocId
-            int docLength = fileUtils.getDocLength(minDocId);
 
             // For each term that has the minimum docId, calculate the score and add the document to the priority queue
             for (int i = 0; i < postingLists.size(); i++) {
@@ -65,7 +65,7 @@ public class DAAT {
                 if (p.getDocid() == minDocId) {
                     // Check the flag to see if we are using BM25 or TF-IDF
                     if (Global.isBM25) {
-                        d.calculateScoreBM25(p.getFrequency(), dictionaryElems.get(i).getDf(), docLength);
+                        d.calculateScoreBM25(p.getFrequency(), dictionaryElems.get(i).getDf(), docLengths.get(minDocId));
                     } else {
                         // Calculate the score using TF-IDF
                         d.calculateScoreTFIDF(dictionaryElems.get(i).getIdf(), p.getFrequency());

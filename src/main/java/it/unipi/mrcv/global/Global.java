@@ -1,8 +1,12 @@
 package it.unipi.mrcv.global;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -26,6 +30,7 @@ public class Global {
     public static int collectionLength;
     public static double averageDocLength;
     public static HashSet<String> stopWordsSet;
+    public static ArrayList<Integer> docLengths = new ArrayList<>();
 
     public static void load() {
         try {
@@ -43,7 +48,26 @@ public class Global {
         } catch (IOException e) {
             System.out.println("Can't read collectionInfo file");
         }
+        // load from the docIndex file the docLengths and store them in a list
+        int chunkSize = (collectionLength * 11) / 4;
+        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
 
+        try (FileChannel channel = FileChannel.open(Paths.get(prefixDocIndex), StandardOpenOption.READ)) {
+            int bytesRead;
+            while ((bytesRead = channel.read(buffer)) != -1) {
+                buffer.flip(); // Switch the buffer from writing mode to reading mode
+
+                while (buffer.remaining() >= 11) {
+                    buffer.position(buffer.position() + 7); // Skip the 7-byte string
+                    int value = buffer.getInt(); // Read the integer
+                    docLengths.add(value);
+                }
+
+                buffer.compact(); // Prepare the buffer for writing again
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 }

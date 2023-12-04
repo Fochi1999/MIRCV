@@ -290,6 +290,8 @@ public class Merger {
             e.printStackTrace();
         }
 
+        // save the collection length and the average doc length in a file
+        Files.write(Paths.get("collectionInfo.txt"), (collectionLength + "\n" + Global.averageDocLength).getBytes());
 
     }
 
