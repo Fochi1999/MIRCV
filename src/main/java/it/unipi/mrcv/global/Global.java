@@ -22,6 +22,7 @@ public class Global {
     public static boolean compression=true;
     public static boolean stem=true;
     public static boolean stopWords=true;
+    public static boolean isBM25 = true;
     public static int collectionLength;
     public static double averageDocLength;
     public static HashSet<String> stopWordsSet;

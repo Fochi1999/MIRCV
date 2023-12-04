@@ -14,6 +14,7 @@ public class Document {
     public int getDocId() {
         return docId;
     }
+
     public void calculateScoreBM25(double idf, int tf, int docLength) {
         double k1 = 1.2;
         double b = 0.75;
@@ -30,4 +31,6 @@ public class Document {
     public double getScore() {
         return score;
     }
+
+
 }

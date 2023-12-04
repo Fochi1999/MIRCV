@@ -13,12 +13,14 @@ public class DAAT {
         PriorityQueue<Document> incQueue = new PriorityQueue<>(new IncComparatorDocument());
         // Create a priority queue of documents; this will be used to order documents from highest to lowest score and will be the output
         PriorityQueue<Document> decQueue = new PriorityQueue<>(new DecComparatorDocument());
+        ArrayList<Document> documents = new ArrayList<>();
+        // Create a list of dictionary elements
+
         // Create a list of posting lists; this will be used to iterate through the posting lists of each query term
         ArrayList<PostingList> postingLists = new ArrayList<>();
         // Create a list of documents; this list is connected to the priority queues
-        ArrayList<Document> documents = new ArrayList<>();
-        // Create a list of dictionary elements
         ArrayList<DictionaryElem> dictionaryElems = new ArrayList<>();
+
 
         // For each query term, get the posting list and add it to the list of posting lists
         for (String term : queryTerms) {
@@ -40,34 +42,71 @@ public class DAAT {
             return null;
         }
 
-        // Create an array of integers that will be used to iterate through the posting lists
-        int[] pointers = new int[postingLists.size()];
-        // Create an array of integers that will be used to store the document ids of the posting lists
-        int[] docIds = new int[postingLists.size()];
-        // Create an array of integers that will be used to store the term frequencies of the posting lists
-        int[] tfs = new int[postingLists.size()];
-        // Create an array of doubles that will be used to store the inverse document frequencies of the posting lists
-        double[] idfs = new double[postingLists.size()];
-        // Create an array of integers that will be used to store the document lengths of the posting lists
-        int[] docLengths = new int[postingLists.size()];
-        // Create an array of doubles that will be used to store the scores of the documents
-        double[] scores = new double[postingLists.size()];
 
-        // For each posting list, get the first posting and store the document id, the term frequency, the inverse document frequency, the document length and the score
-        for (int i = 0; i < postingLists.size(); i++) {
-            Posting posting = postingLists.get(i).getPostings().get(0);
-            docIds[i] = posting.getDocid();
-            tfs[i] = posting.getFrequency();
-            idfs[i] = dictionaryElems.get(i).getIdf();
-            docLengths[i] = dictionaryElems.get(i).getDocLength();
-            scores[i] = idfs[i] * (tfs[i] * (1.0 + 1.2) / (tfs[i] + 1.2 * (0.25 + 0.75 * docLengths[i] / Global.averageDocLength)));
+        while (true) {
+            // For each posting list get the first posting and find the minimum docId among all the first postings
+            int minDocId = Integer.MAX_VALUE;
+            for (PostingList pl : postingLists) {
+                Posting p = pl.getPostings().get(0);
+                if (p.getDocid() < minDocId) {
+                    minDocId = p.getDocid();
+                }
+            }
+
+            // Create a new document; its score will be computed, and it will be added to the priority queue
+            Document d = new Document(minDocId, 0);
+            // Get the document length of the document with docId = minDocId
+            int docLength = fileUtils.getDocLength(minDocId);
+
+            // For each term that has the minimum docId, calculate the score and add the document to the priority queue
+            for (int i = 0; i < postingLists.size(); i++) {
+                PostingList pl = postingLists.get(i);
+                Posting p = pl.getPostings().get(0);
+                if (p.getDocid() == minDocId) {
+                    // Check the flag to see if we are using BM25 or TF-IDF
+                    if (Global.isBM25) {
+                        d.calculateScoreBM25(p.getFrequency(), dictionaryElems.get(i).getDf(), docLength);
+                    } else {
+                        // Calculate the score using TF-IDF
+                        d.calculateScoreTFIDF(dictionaryElems.get(i).getIdf(), p.getFrequency());
+                    }
+
+                    // Remove the first posting from the posting list
+                    pl.getPostings().remove(0);
+                    // If the posting list is empty, remove it from the list of posting lists
+                    if (pl.getPostings().isEmpty()) {
+                        postingLists.remove(pl);
+                    }
+
+                    // if document list size is less than k, add the document to the list of documents and to the queues
+                    if (documents.size() < k) {
+                        documents.add(d);
+                        incQueue.add(d);
+                        decQueue.add(d);
+                    }
+                    // if document list size is equal to k, compare its score with the lowest score in the queue
+                    else {
+                        // if the score is higher, remove the lowest score from the queue and add the document
+                        if (d.getScore() > incQueue.peek().getScore()) {
+                            Document q = incQueue.poll();
+                            decQueue.remove(q);
+                            documents.remove(q);
+                            // add the document to the list of documents and to the queues
+                            documents.add(d);
+                            incQueue.add(d);
+                            decQueue.add(d);
+                        }
+                    }
+                }
+            }
+
+            // If the list of posting lists is empty, break the loop
+            if (postingLists.isEmpty()) {
+                break;
+            }
         }
 
-
-
-
-
-        return null;
-        // TODO
+        // Return the priority queue of documents
+        return decQueue;
     }
 }
