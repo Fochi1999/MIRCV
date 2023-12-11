@@ -1,12 +1,19 @@
 package it.unipi.mrcv.data_structures;
 
+import it.unipi.mrcv.compression.Unary;
+import it.unipi.mrcv.compression.VariableByte;
+import it.unipi.mrcv.global.Global;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 import static it.unipi.mrcv.global.Global.averageDocLength;
 import static it.unipi.mrcv.global.Global.collectionLength;
+import static it.unipi.mrcv.index.fileUtils.readEntryDictionary;
 
 public class DictionaryElem {
     // term
@@ -253,6 +260,41 @@ public class DictionaryElem {
         vocBuffer.putInt(lengthDocIds);
 
 
+    }
+
+    public static DictionaryElem binarySearch( String term){
+        int step = DictionaryElem.size();
+        int firstPos = 0;
+        int currentPos;
+        int previousPos;
+        int lastPos;
+        ByteBuffer readBuffer = ByteBuffer.allocate(step);
+        DictionaryElem readElem = new DictionaryElem();
+        FileChannel vocFchan = Global.vocabularyChannel;
+        try {
+            lastPos = (int) (vocFchan.size() / step);
+            currentPos = (firstPos + lastPos) / 2;
+            do {
+                readBuffer.clear();
+                previousPos = currentPos;
+                readEntryDictionary(readBuffer, vocFchan, currentPos * step, readElem);
+                if (readElem.getTerm().compareTo(term) > 0) {
+                    lastPos = currentPos;
+                } else {
+                    firstPos = currentPos;
+                }
+                currentPos = (firstPos + lastPos) / 2;
+                if (currentPos == previousPos && !readElem.getTerm().equals(term)) {
+                    throw new Exception("word doesn't exists in vocabulary");
+                }
+
+            } while ((!readElem.getTerm().equals(term)));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new DictionaryElem();
+        }
+        return readElem;
     }
 
     public void printDebug() {

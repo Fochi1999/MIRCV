@@ -167,7 +167,6 @@ public class fileUtils {
         int lastPos;
         ByteBuffer readBuffer = ByteBuffer.allocate(step);
         DictionaryElem readElem = new DictionaryElem();
-        String res;
         FileChannel vocFchan = Global.vocabularyChannel;
         try {
             lastPos = (int) (vocFchan.size() / step);
@@ -253,7 +252,7 @@ public class fileUtils {
     }
 
 
-    private static ArrayList<Posting> readPosting(long offset, int length) {
+    public static ArrayList<Posting> readPosting(long offset, int length) {
         ArrayList<Posting> ret = new ArrayList<>();
         ArrayList<Integer> docIds = readUncompressed(Global.finalDoc, offset, length);
         ArrayList<Integer> freqs = readUncompressed(Global.finalFreq, offset, length);

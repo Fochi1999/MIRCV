@@ -26,15 +26,10 @@ public class Main {
         Global.load();
         SPIMI.exeSPIMI("collection.tsv");
         Global.load();
-        Merger.Merge();
-        Global.indexing = false;*/
+        Merger.Merge();*/
+        Global.indexing = false;
         Global.load();
-        PostingList pl=new PostingList();
-
-
-        long startTime = System.currentTimeMillis(); // Capture start time
         ArrayList<String> query = new ArrayList<>();
-
         query.add("appl");
         query.add("cat");
         query.add("dog");
@@ -45,15 +40,20 @@ public class Main {
         query.add("econom");
         query.add("tree");
         query.add("president");
-        PriorityQueue<Document> queue =
-        DAAT.executeDAAT(query, 10);
+
+
+        long startTime = System.currentTimeMillis(); // Capture start time
+
+        PriorityQueue<Document> queue = DAAT.executeDAAT(query, 10);
+
+        long endTime = System.currentTimeMillis(); // Capture end time
+
         if (queue != null) {
             while (!queue.isEmpty()) {
                 Document d = queue.poll();
                 System.out.printf("Docid: %d - Score: %f\n", d.getDocId(), d.getScore());
             }
         }
-        long endTime = System.currentTimeMillis(); // Capture end time
 
 
 

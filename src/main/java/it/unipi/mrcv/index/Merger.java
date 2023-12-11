@@ -197,8 +197,6 @@ public class Merger {
                 // implement skipping
                 if(temporaryDocIds.size() >= 1024){
                     blockLength = (int) Math.ceil(Math.sqrt(temporaryDocIds.size()));
-                    long latestSkipDocOff= latestDocOff;
-                    long latestSkipFreqOff= latestFreqOff;
                     // for every blockLength docIds, create a skip element and add it to the skipList
                     for(int i = 0; i < temporaryDocIds.size(); i += blockLength){
                         // the step is the number of bytes needed to store the block, it varies based on the compression
@@ -206,31 +204,25 @@ public class Merger {
                         int freqStep=blockLength*4;
                         byte[] blockDocs;
                         byte[] blockFreqs;
-                        ArrayList<Integer> debugF;
-                        ArrayList<Integer> debugD;
-                        ArrayList<Integer> debugF2=new ArrayList<Integer>(temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size())));
                         if(compression==true){
                             blockDocs=VariableByte.fromArrayIntToVarByte(new ArrayList<Integer>( temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size()))));
                             blockFreqs=Unary.ArrayIntToUnary(new ArrayList<Integer>(temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size()))));
                             docStep=blockDocs.length;
                             freqStep=blockFreqs.length;
-                            docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, latestSkipDocOff, docStep);
-                            freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestSkipFreqOff, freqStep);
+                            docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, docOff, docStep);
+                            freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, freqOff, freqStep);
                             docsBuffer.put(blockDocs);
                             freqsBuffer.put(blockFreqs);
 
                         }
                         // create the skip element and add it to the skipList
                         SkipElem skipElem = new SkipElem();
-                        skipElem.setDocID(temporaryDocIds.get(i));
+                        skipElem.setDocID(temporaryDocIds.get(Math.min(i + blockLength, temporaryDocIds.size()-1)));
                         skipElem.setOffsetDoc(docOff);
                         skipElem.setOffsetFreq(freqOff);
                         skipElem.setDocBlockLen(docStep);
                         skipElem.setFreqBlockLen(freqStep);
                         skipList.add(skipElem);
-                        // update the offset of the skip information
-                        latestSkipDocOff += docStep;
-                        latestSkipFreqOff += freqStep;
                         // update the offset of the docIds and frequencies
                         docOff += docStep;
                         freqOff += freqStep;
@@ -244,8 +236,8 @@ public class Merger {
                     // update the statistics of the temporaryElem
                     temporaryElem.getDictionaryElem().setOffsetSkip(skipOff);
                     temporaryElem.getDictionaryElem().setSkipLen(skipList.size());
-                    temporaryElem.getDictionaryElem().setLengthDocIds((int) (latestSkipDocOff - latestDocOff));
-                    temporaryElem.getDictionaryElem().setLengthFreq((int) (latestSkipFreqOff - latestFreqOff));
+                    temporaryElem.getDictionaryElem().setLengthDocIds((int) (docOff - latestDocOff));
+                    temporaryElem.getDictionaryElem().setLengthFreq((int) (freqOff - latestFreqOff));
                     // update the offset of the skip information
                     skipOff += skipList.size() * SkipElem.size();
                     // clear the skipList
