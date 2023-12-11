@@ -1,6 +1,8 @@
 package it.unipi.mrcv.query;
 
 import it.unipi.mrcv.data_structures.*;
+import it.unipi.mrcv.data_structures.Comparators.DecComparatorDocument;
+import it.unipi.mrcv.data_structures.Comparators.IncComparatorDocument;
 import it.unipi.mrcv.global.Global;
 import it.unipi.mrcv.index.fileUtils;
 
@@ -18,14 +20,16 @@ public class DAAT {
         ArrayList<PostingList> postingLists = new ArrayList<>();
         ArrayList<DictionaryElem> dictionaryElems = new ArrayList<>();
         ArrayList<Integer> currentPositions = new ArrayList<>();
+        ArrayList<Integer> blocksNumber = new ArrayList<>();
 
         for (String term : queryTerms) {
             PostingList pl = new PostingList();
-            DictionaryElem elem = fileUtils.binarySearchOnFile("vocabularyCompressed", term, pl);
+            DictionaryElem elem = fileUtils.binarySearchOnDictionaryBlock( term, pl,0);
             if (elem != null) {
                 postingLists.add(pl);
                 dictionaryElems.add(elem);
                 currentPositions.add(0); // Initialize current position for each posting list
+                blocksNumber.add(0);
             }
         }
 
@@ -58,12 +62,26 @@ public class DAAT {
                     // Move to next posting in the list
                     currentPositions.set(i, currentIndex + 1);
 
-                    // If the posting list is exhausted, remove it
+                    // If the posting list is exhausted, check if there are other blocks to read
                     if (currentPositions.get(i) >= pl.getPostings().size()) {
-                        postingLists.remove(i);
-                        dictionaryElems.remove(i);
-                        currentPositions.remove(i);
-                        i--; // Adjust index due to removal
+                        blocksNumber.set(i, blocksNumber.get(i) + 1);
+                        if (blocksNumber.get(i)<dictionaryElems.get(i).getSkipLen()) //there is another block to read
+                        {
+                            PostingList pl2 = new PostingList();
+                            DictionaryElem elem = fileUtils.binarySearchOnDictionaryBlock( dictionaryElems.get(i).getTerm(), pl2,blocksNumber.get(i));
+                            if (elem != null) {
+                                postingLists.set(i, pl2);
+                                currentPositions.set(i, 0); // Initialize current position for each posting list
+                            }
+                        }
+                        else //no more blocks to read
+                        {
+                            postingLists.remove(i);
+                            dictionaryElems.remove(i);
+                            currentPositions.remove(i);
+                            i--; // Adjust index due to removal
+                        }
+
                     }
                 }
             }

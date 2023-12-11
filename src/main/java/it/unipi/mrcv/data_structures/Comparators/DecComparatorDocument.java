@@ -1,4 +1,6 @@
-package it.unipi.mrcv.data_structures;
+package it.unipi.mrcv.data_structures.Comparators;
+
+import it.unipi.mrcv.data_structures.Document;
 
 public class DecComparatorDocument implements java.util.Comparator<Document>{
     @Override

@@ -27,10 +27,16 @@ public class Global {
     public static boolean stem=true;
     public static boolean stopWords=true;
     public static boolean isBM25 = true;
+    public static boolean indexing = false;
     public static int collectionLength;
     public static double averageDocLength;
     public static HashSet<String> stopWordsSet;
     public static ArrayList<Integer> docLengths = new ArrayList<>();
+    public static FileChannel docIndexChannel;
+    public static FileChannel vocabularyChannel;
+    public static FileChannel docIdsChannel;
+    public static FileChannel frequenciesChannel;
+    public static FileChannel skippingChannel;
 
     public static void load() {
         try {
@@ -40,34 +46,57 @@ public class Global {
             System.out.println("Can't read Stopword file, flag stopwords set to false");
             stopWords = false;
         }
-        // load collection length and average doc length
-        try {
-            List<String> collectionInfo = Files.readAllLines(Paths.get("collectionInfo.txt"));
-            collectionLength = Integer.parseInt(collectionInfo.get(0));
-            averageDocLength = Double.parseDouble(collectionInfo.get(1));
-        } catch (IOException e) {
-            System.out.println("Can't read collectionInfo file");
-        }
-        // load from the docIndex file the docLengths and store them in a list
-        int chunkSize = (collectionLength * 11) / 4;
-        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
 
-        try (FileChannel channel = FileChannel.open(Paths.get(prefixDocIndex), StandardOpenOption.READ)) {
-            int bytesRead;
-            while ((bytesRead = channel.read(buffer)) != -1) {
-                buffer.flip(); // Switch the buffer from writing mode to reading mode
-
-                while (buffer.remaining() >= 11) {
-                    buffer.position(buffer.position() + 7); // Skip the 7-byte string
-                    int value = buffer.getInt(); // Read the integer
-                    docLengths.add(value);
-                }
-
-                buffer.compact(); // Prepare the buffer for writing again
+        if(indexing==false) {
+            // load collection length and average doc length
+            try {
+                List<String> collectionInfo = Files.readAllLines(Paths.get("collectionInfo.txt"));
+                collectionLength = Integer.parseInt(collectionInfo.get(0));
+                averageDocLength = Double.parseDouble(collectionInfo.get(1));
+            } catch (IOException e) {
+                System.out.println("Can't read collectionInfo file");
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            //initialize the filechannels in order to not open more times than necessary
+            try {
+                docIndexChannel = FileChannel.open(Paths.get(prefixDocIndex), StandardOpenOption.READ);
+                if(compression==true) {
+                    vocabularyChannel = FileChannel.open(Paths.get(finalVocCompressed), StandardOpenOption.READ);
+                    docIdsChannel = FileChannel.open(Paths.get(finalDocCompressed), StandardOpenOption.READ);
+                    frequenciesChannel = FileChannel.open(Paths.get(finalFreqCompressed), StandardOpenOption.READ);
+                }
+                else {
+                    vocabularyChannel = FileChannel.open(Paths.get(finalVoc), StandardOpenOption.READ);
+                    docIdsChannel = FileChannel.open(Paths.get(finalDoc), StandardOpenOption.READ);
+                    frequenciesChannel = FileChannel.open(Paths.get(finalFreq), StandardOpenOption.READ);
+                }
+                skippingChannel = FileChannel.open(Paths.get(skippingFile), StandardOpenOption.READ);
+            } catch (IOException e) {
+                System.out.println("Can't open channel");
+                e.printStackTrace();
+            }
+            int chunkSize = (collectionLength * 11) / 4;
+            ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
+            // load from the docIndex file the docLengths and store them in a list
+            try (FileChannel channel = docIndexChannel) {
+                int bytesRead;
+                while ((bytesRead = channel.read(buffer)) != -1) {
+                    buffer.flip(); // Switch the buffer from writing mode to reading mode
+
+                    while (buffer.remaining() >= 11) {
+                        buffer.position(buffer.position() + 7); // Skip the 7-byte string
+                        int value = buffer.getInt(); // Read the integer
+                        docLengths.add(value);
+                    }
+
+                    buffer.compact(); // Prepare the buffer for writing again
+                }
+            } catch (IOException e) {
+                System.out.println("Can't read docIndex file");
+            }
         }
+
+
+
 
     }
 }

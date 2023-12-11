@@ -83,5 +83,17 @@ public class SkipElem {
         buffer.putInt(freqBlockLen);
     }
 
+    public void readFromFile(MappedByteBuffer buffer) {
+        docID = buffer.getInt();
+        offsetDoc = buffer.getLong();
+        docBlockLen = buffer.getInt();
+        offsetFreq = buffer.getLong();
+        freqBlockLen = buffer.getInt();
+    }
 
+
+    public void printDebug() {
+        System.out.printf("DocID: %d - OffsetDoc: %d - DocBlockLen: %d - OffsetFreq: %d - FreqBlockLen: %d\n",
+                docID, offsetDoc, docBlockLen, offsetFreq, freqBlockLen);
+    }
 }

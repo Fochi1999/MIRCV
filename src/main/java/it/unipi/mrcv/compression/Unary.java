@@ -23,7 +23,7 @@ public class Unary {
 
         if (bitSet.length() % 8 == 0){
 
-            bitSet.set(j,j+7);
+            bitSet.set(j,j+7,false);
         }
 
         return bitSet.toByteArray();

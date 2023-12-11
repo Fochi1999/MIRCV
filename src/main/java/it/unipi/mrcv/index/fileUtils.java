@@ -5,10 +5,12 @@ import it.unipi.mrcv.compression.VariableByte;
 import it.unipi.mrcv.data_structures.DictionaryElem;
 import it.unipi.mrcv.data_structures.Posting;
 import it.unipi.mrcv.data_structures.PostingList;
+import it.unipi.mrcv.data_structures.SkipElem;
 import it.unipi.mrcv.global.Global;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -42,7 +44,7 @@ public class fileUtils {
             @Override
             public boolean accept(final File dir,
                                   final String name) {
-                String regexString = "^(" + Global.finalFreq + "|" + Global.finalDoc + "|" + Global.finalVoc + ").*";
+                String regexString = "^(" + Global.finalFreq + "|" + Global.finalDoc + "|" + Global.finalVoc + "|" + Global.skippingFile + "|" + "docIndex" + "|" + "collectionInfo.txt" +").*";
                 return name.matches(regexString);
             }
         });
@@ -70,7 +72,7 @@ public class fileUtils {
         }
     }
 
-    public static DictionaryElem binarySearchOnFile(String path, String term, int initFirstPos, int initLastPos) { //TODO fix
+    public static DictionaryElem binarySearchOnDictionary( String term, int initFirstPos, int initLastPos) { //TODO fix
         int step = DictionaryElem.size();
         int firstPos = initFirstPos;
         int lastPos = initLastPos;
@@ -79,8 +81,7 @@ public class fileUtils {
         ByteBuffer readBuffer = ByteBuffer.allocate(step);
         DictionaryElem readElem = new DictionaryElem();
         String res;
-        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
-                StandardOpenOption.READ)) {
+        try (FileChannel vocFchan = Global.vocabularyChannel) {
             do {
                 readBuffer.clear();
                 previousPos = currentPos;
@@ -106,7 +107,7 @@ public class fileUtils {
         return readElem;
     }
 
-    public static DictionaryElem binarySearchOnFile(String path, String term, PostingList pl) {
+    public static DictionaryElem binarySearchOnDictionary(String term, PostingList pl) {
         int step = DictionaryElem.size();
         int firstPos = 0;
         int currentPos;
@@ -115,8 +116,7 @@ public class fileUtils {
         ByteBuffer readBuffer = ByteBuffer.allocate(step);
         DictionaryElem readElem = new DictionaryElem();
         String res;
-        try (FileChannel vocFchan = (FileChannel) Files.newByteChannel(Paths.get(path),
-                StandardOpenOption.READ)) {
+        try (FileChannel vocFchan = Global.vocabularyChannel) {
             lastPos = (int) (vocFchan.size() / step);
             currentPos = (firstPos + lastPos) / 2;
             do {
@@ -137,7 +137,15 @@ public class fileUtils {
             } while ((!readElem.getTerm().equals(term)));
             pl.setTerm(term);
             if(Global.compression==true){
-                pl.addPostings(readPostingCompressed(readElem.getOffsetDoc(), readElem.getOffsetFreq(),readElem.getLengthDocIds(),readElem.getLengthFreq()));
+                byte[] docsBytes = readCompressed(Global.docIdsChannel, readElem.getOffsetDoc(), readElem.getLengthDocIds());
+                byte[] freqsBytes = readCompressed(Global.frequenciesChannel, readElem.getOffsetFreq(), readElem.getLengthFreq());
+                ArrayList<Integer> docIds = VariableByte.fromByteToArrayInt(docsBytes);
+                ArrayList<Integer> freqs = Unary.unaryToArrayInt(freqsBytes);
+                for(int i=0;i<docIds.size();i++){
+                    int docId = docIds.get(i);
+                    int freq = freqs.get(i);
+                    pl.addPosting(new Posting(docId,freq));
+                }
             }
             else{
                 pl.addPostings(readPosting(readElem.getOffsetDoc(), readElem.getLengthDocIds()));
@@ -150,16 +158,100 @@ public class fileUtils {
         return readElem;
     }
 
-    private static ArrayList<Posting> readPostingCompressed(long offsetDoc, long offsetFreq, int lengthDocIds, int lengthFreq) {
-        ArrayList<Posting> ret = new ArrayList<>();
-        ArrayList<Integer> docIds = readCompressedDocIds(Global.finalDocCompressed, offsetDoc, lengthDocIds);
-        ArrayList<Integer> freqs = readCompressedFrequencies(Global.finalFreqCompressed, offsetFreq, lengthFreq);
-        for(int i=0;i<docIds.size();i++){
-            ret.add(new Posting(docIds.get(i),freqs.get(i)));
+    //Function that reads the dictionary and its postinglists from the vocabulary file, return only a block of the postinglist (if the postingList is splitted in blocks)
+    public static DictionaryElem binarySearchOnDictionaryBlock( String term, PostingList pl, int nBlock){
+        int step = DictionaryElem.size();
+        int firstPos = 0;
+        int currentPos;
+        int previousPos;
+        int lastPos;
+        ByteBuffer readBuffer = ByteBuffer.allocate(step);
+        DictionaryElem readElem = new DictionaryElem();
+        String res;
+        FileChannel vocFchan = Global.vocabularyChannel;
+        try {
+            lastPos = (int) (vocFchan.size() / step);
+            currentPos = (firstPos + lastPos) / 2;
+            do {
+                readBuffer.clear();
+                previousPos = currentPos;
+                readEntryDictionary(readBuffer, vocFchan, currentPos * step, readElem);
+
+                if (readElem.getTerm().compareTo(term) > 0) {
+                    lastPos = currentPos;
+                } else {
+                    firstPos = currentPos;
+                }
+                currentPos = (firstPos + lastPos) / 2;
+                if (currentPos == previousPos && !readElem.getTerm().equals(term)) {
+                    throw new Exception("word doesn't exists in vocabulary");
+                }
+
+            } while ((!readElem.getTerm().equals(term)));
+            pl.setTerm(term);
+            //We want to return only a portion of the postinglist if skipping is abilited for that term
+            if(Global.compression==true){
+                //return all posting list
+                if(readElem.getSkipLen()==0) {
+                    byte[] docsBytes = readCompressed(Global.docIdsChannel, readElem.getOffsetDoc(), readElem.getLengthDocIds());
+                    byte[] freqsBytes = readCompressed(Global.frequenciesChannel, readElem.getOffsetFreq(), readElem.getLengthFreq());
+                    ArrayList<Integer> docIds = VariableByte.fromByteToArrayInt(docsBytes);
+                    ArrayList<Integer> freqs = Unary.unaryToArrayInt(freqsBytes);
+                    for (int i = 0; i < docIds.size(); i++) {
+                        int docId = docIds.get(i);
+                        int freq = freqs.get(i);
+                        pl.addPosting(new Posting(docId, freq));
+                    }
+                }
+                else{
+                    SkipElem skipElem=new SkipElem();
+                    MappedByteBuffer mbbSkipping = Global.skippingChannel.map(FileChannel.MapMode.READ_ONLY,readElem.getOffsetSkip()+nBlock*SkipElem.size(),SkipElem.size()).load();
+                    skipElem.readFromFile(mbbSkipping);
+                    byte[] docsBytes = readCompressed(Global.docIdsChannel, skipElem.getOffsetDoc(), skipElem.getDocBlockLen());
+                    byte[] freqsBytes = readCompressed(Global.frequenciesChannel, skipElem.getOffsetFreq(), skipElem.getFreqBlockLen());
+                    ArrayList<Integer> docIds = VariableByte.fromByteToArrayInt(docsBytes);
+                    ArrayList<Integer> freqs = Unary.unaryToArrayInt(freqsBytes);
+                    for (int i = 0; i < docIds.size(); i++) {
+                        int docId = docIds.get(i);
+                        int freq = freqs.get(i);
+                        pl.addPosting(new Posting(docId, freq));
+                    }
+                }
+
+            }
+            else{
+                pl.addPostings(readPosting(readElem.getOffsetDoc(), readElem.getLengthDocIds()));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new DictionaryElem();
+        }
+        return readElem;
+    }
+    public static void printAllPostingBlocks(String term){
+        int ns=0;
+        PostingList pl=new PostingList();
+        int counter=0;
+        DictionaryElem de = binarySearchOnDictionaryBlock(term,pl,ns);
+        if(de.getSkipLen()==0){
+            pl.printPostingList();
+        }
+        else{
+            while(counter<de.getCf()){
+                System.out.println("block: "+ns);
+                pl.printPostingList();
+                pl.getPostings().clear();
+                ns++;
+                de = binarySearchOnDictionaryBlock(term,pl,ns);
+                counter+=pl.getPostings().size();
+
+            }
 
         }
-        return ret;
+
     }
+
 
     private static ArrayList<Posting> readPosting(long offset, int length) {
         ArrayList<Posting> ret = new ArrayList<>();
@@ -302,13 +394,28 @@ public class fileUtils {
         }
     }
 
-    public static ArrayList<Integer> readCompressedDocIds(String path, long offset, int length) {
+
+    public static byte[] readCompressed(FileChannel fchan,long offset, int lenght){
+        byte[] ret;
+        try {
+            ByteBuffer buffer = ByteBuffer.allocate(lenght);
+            fchan.read(buffer, offset);
+            buffer.flip();
+            ret = new byte[lenght];
+            buffer.get(ret);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return ret;
+    }
+    public static ArrayList<Integer> readCompressedDocIds(FileChannel fchan, long offset, int length) {
         ArrayList<Integer> ret;
         try {
-            RandomAccessFile raf = new RandomAccessFile(new File(path), "r");
+            ByteBuffer buffer = ByteBuffer.allocate(length);
+            fchan.read(buffer, offset);
+            buffer.flip();
             byte[] b = new byte[length];
-            raf.seek(offset);
-            raf.read(b);
+            buffer.get(b);
             ret = VariableByte.fromByteToArrayInt(
                     b);
         } catch (Exception e) {
@@ -317,15 +424,16 @@ public class fileUtils {
         return ret;
     }
 
-    public static ArrayList<Integer> readCompressedFrequencies(String path, long offset, int length) {
+
+    public static ArrayList<Integer> readCompressedFrequencies(FileChannel fchan, long offset, int length) {
         ArrayList<Integer> ret;
         try {
-            RandomAccessFile raf = new RandomAccessFile(new File(path), "r");
+            ByteBuffer buffer = ByteBuffer.allocate(length);
+            fchan.read(buffer, offset);
+            buffer.flip();
             byte[] b = new byte[length];
-            raf.seek(offset);
-            raf.read(b);
-            ret = Unary.unaryToArrayInt(
-                    b);
+            buffer.get(b);
+            ret = Unary.unaryToArrayInt(b);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
