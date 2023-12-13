@@ -101,8 +101,8 @@ public class MaxScore {
             }
 
             // Find the next document to process
-/*            if(next == currentDocId)
-                break;*/
+            if(next == currentDocId)
+                break;
             if (next == Global.collectionLength)
                 currentDocId = -1;
             else if (next > currentDocId)
@@ -148,7 +148,7 @@ public class MaxScore {
         if(Global.isBM25 == false)
             tempDoc.calculateScoreTFIDF(dictionaryElem.getIdf(), posting.getFrequency());
         else
-            tempDoc.calculateScoreBM25(dictionaryElem.getIdf(), posting.getFrequency(), docLengths.get(posting.getDocid()));
+            tempDoc.calculateScoreBM25(posting.getFrequency(), dictionaryElem.getDf(), docLengths.get(posting.getDocid()));
         return tempDoc.getScore();
     }
 }
