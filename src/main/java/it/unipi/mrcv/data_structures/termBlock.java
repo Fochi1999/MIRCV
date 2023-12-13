@@ -59,5 +59,12 @@ public class termBlock {
         this.term.setLengthFreq(t.getDictionaryElem().getLengthFreq());
         this.numBlock=t.getNumBlock();
 
+        this.term.setMaxTF(0);
+        this.term.setOffsetSkip(0);
+        this.term.setSkipLen(0);
+        this.term.setIdf(0);
+        this.term.setMaxTFIDF(0);
+        this.term.setMaxBM25(0);
+
     }
 }

@@ -96,7 +96,7 @@ public class SkipElem {
         freqBlockLen = buffer.getInt();
     }
 
-    public static ArrayList<SkipElem> readMultipleFromFile(long offset, int n) throws IOException {
+    public static ArrayList<SkipElem> readSkipList(long offset, int n) throws IOException {
         ArrayList<SkipElem> skipElems = new ArrayList<>(n);
         MappedByteBuffer mbbSkipping = Global.skippingChannel.map(FileChannel.MapMode.READ_ONLY,offset,SkipElem.size()*n).load();
         for (int i = 0; i < n; i++) {

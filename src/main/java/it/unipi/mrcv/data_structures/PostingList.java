@@ -39,15 +39,18 @@ public class PostingList {
         this.term = elem.getTerm();
         this.postings = new ArrayList<>();
         currentPosition = 0;
-        if(compression==true) {
+        if(compression == true) {
             if (elem.getSkipLen() != 0) {
-                this.skipElems = SkipElem.readMultipleFromFile(elem.getOffsetSkip(), elem.getSkipLen());
-                loadBlock(skipElems.get(0).getOffsetDoc(), skipElems.get(0).getOffsetFreq(), skipElems.get(0).getDocBlockLen(), skipElems.get(0).getFreqBlockLen());
+                this.skipElems = SkipElem.readSkipList(elem.getOffsetSkip(), elem.getSkipLen());
+                loadBlock(skipElems.get(0).getOffsetDoc(),
+                        skipElems.get(0).getOffsetFreq(),
+                        skipElems.get(0).getDocBlockLen(),
+                        skipElems.get(0).getFreqBlockLen());
             }
             else {
                 loadBlock(elem.getOffsetDoc(), elem.getOffsetFreq(), elem.getLengthDocIds(), elem.getLengthFreq());
-                currentBlock++;
             }
+            currentBlock++;
         }else{
             this.addPostings(fileUtils.readPosting(elem.getOffsetDoc(), elem.getLengthDocIds()));
         }
@@ -99,7 +102,7 @@ public class PostingList {
 
     }
     public Posting getCurrent(){
-        if(currentPosition<postings.size()){
+        if(currentPosition < postings.size()){
             return postings.get(currentPosition);
         }
         else{
@@ -133,7 +136,62 @@ public class PostingList {
         }
     }
 
-    // function that returns the first block of the posting list
+    // nextGEQ returns the first posting with docid greater or equal to docid
+    public Posting nextGEQ(int docid) {
+        // check the last docId of the current block
+        if (skipElems != null) {
+
+            while (skipElems.get(currentBlock).getDocID() < docid && currentBlock < skipElems.size()) {
+
+                currentBlock++;
+            }
+            if (currentBlock == skipElems.size()) {
+                return null;
+            }
+
+            currentPosition = 0;
+            try {
+                loadBlock(skipElems.get(currentBlock).getOffsetDoc(), skipElems.get(currentBlock).getOffsetFreq(), skipElems.get(currentBlock).getDocBlockLen(), skipElems.get(currentBlock).getFreqBlockLen());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            if (postings.get(postings.size() - 1).getDocid() < docid) {
+                return null;
+            }
+        }
+
+
+        if (postings.isEmpty()) {
+            return null;
+        }
+
+        // binary search of the docid
+        int low = 0;
+        int high = postings.size() - 1;
+
+        while (low <= high) {
+            // bitwise shift to divide by 2
+            int mid = (low + high) >>> 1;
+            Posting midPosting = postings.get(mid);
+            int midDocId = midPosting.getDocid();
+
+            if (midDocId < docid) {
+                low = mid + 1;
+            } else if (midDocId > docid) {
+                high = mid - 1;
+            } else {
+                return midPosting;
+            }
+        }
+
+        if (low < postings.size()) {
+            return postings.get(low);
+        } else {
+            return null;
+        }
+    }
 
 
 

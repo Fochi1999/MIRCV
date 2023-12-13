@@ -177,9 +177,9 @@ public class Merger {
                 // set inverse document frequency of the temporaryElem
                 temporaryElem.getDictionaryElem().setIdf();
                 // set max term frequency of the temporaryElem
-                for (int i = 0; i < temporaryElem.getDictionaryElem().getLengthDocIds(); i++) {
+                for (int i = 0; i < temporaryFreqs.size(); i++) {
                         if (temporaryFreqs.get(i) > temporaryElem.getDictionaryElem().getMaxTF()) {
-                        temporaryElem.getDictionaryElem().setMaxTF(temporaryFreqs.get(i));
+                            temporaryElem.getDictionaryElem().setMaxTF(temporaryFreqs.get(i));
                     }
                 }
                 // set max TFIDF of the temporaryElem
