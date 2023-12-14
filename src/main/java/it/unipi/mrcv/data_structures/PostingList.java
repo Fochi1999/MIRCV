@@ -18,6 +18,8 @@ public class PostingList {
     public int currentBlock = -1;
     public int currentPosition = -1 ;
 
+    public static long startTime1,startTime2,startTime3, endTime1,endTime2,endTime3;
+    public static long totalTime1=0,totalTime2=0,totalTime3=0;
     public PostingList() {
         this.term = " ";
         this.postings = new ArrayList<>();
@@ -89,15 +91,21 @@ public class PostingList {
     private void loadBlock(long offsetDoc, long offsetFreq, int lengthDoc, int lenghtFreq) throws IOException {
         postings.clear();
         if(compression) {
+
             byte[] docsBytes = fileUtils.readCompressed(Global.docIdsChannel, offsetDoc, lengthDoc);
             byte[] freqsBytes = fileUtils.readCompressed(Global.frequenciesChannel, offsetFreq, lenghtFreq);
+
+
             ArrayList<Integer> docIds = VariableByte.fromByteToArrayInt(docsBytes);
+
             ArrayList<Integer> freqs = Unary.unaryToArrayInt(freqsBytes);
+
             for (int i = 0; i < docIds.size(); i++) {
                 int docId = docIds.get(i);
                 int freq = freqs.get(i);
                 addPosting(new Posting(docId, freq));
             }
+
         }
 
     }
@@ -144,6 +152,7 @@ public class PostingList {
     // nextGEQ returns the first posting with docid greater or equal to docid
     public Posting nextGEQ(int docid) {
         // check the last docId of the current block
+
         if (skipElems != null) {
 
             while (currentBlock < skipElems.size() && skipElems.get(currentBlock).getDocID() < docid) {
@@ -160,19 +169,18 @@ public class PostingList {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
         }
         else {
             if (postings.get(postings.size() - 1).getDocid() < docid) {
                 return null;
             }
         }
-
         if (postings.isEmpty()) {
             return null;
         }
-
         // binary search of the docid
-        int low = 0;
+        int low = currentPosition;
         int high = postings.size() - 1;
 
         while (low <= high) {

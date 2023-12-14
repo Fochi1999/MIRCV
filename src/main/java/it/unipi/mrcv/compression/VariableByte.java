@@ -24,32 +24,10 @@ public class VariableByte {
         return ret;
     }
 
-    public static Long fromVarByteToLong(byte[] bytes) {
-        long ret=0;
-        if(bytes.length==1){
-            if((int)bytes[0]==0){
-                return (long)0;
-            }
-        }
-        for (byte b : bytes) {
-            ret=ret*128+b;
-        }
-        ret=ret+128;
-        return ret;
-    }
-    /*public static byte[] fromArrayLongToVarByte(ArrayList<Long> input){
-        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
-        for (Long number : input)
-            buf.put(fromLongToVarByte(number));
 
-        buf.flip();
-        byte[] ret = new byte[buf.remaining()];
-        buf.get(ret);
 
-        return ret;
-    }*/
     public static byte[] fromArrayIntToVarByte(ArrayList<Integer> input){
-        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
+        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Integer.SIZE / Byte.SIZE));
         for (int number : input)
             buf.put(fromIntToVarByte(number));
 
@@ -59,32 +37,8 @@ public class VariableByte {
 
         return ret;
     }
-    public static byte[] fromArrayIntToVarByte(List<Integer> input){
-        ByteBuffer buf = ByteBuffer.allocate(input.size() * (Long.SIZE / Byte.SIZE));
-        for (int number : input)
-            buf.put(fromIntToVarByte(number));
 
-        buf.flip();
-        byte[] ret = new byte[buf.remaining()];
-        buf.get(ret);
 
-        return ret;
-    }
-    public static ArrayList<Long> fromByteToArrayLong(byte[] bytes){
-        ArrayList<Long> numbers = new ArrayList<>();
-        long n = 0;
-        for (byte b : bytes) {
-            if ((b & 0xff) < 128) {
-                n = 128 * n + b;
-            } else {
-                long num = (128 * n + ((b - 128) & 0xff));
-                numbers.add(num);
-                n = 0;
-            }
-        }
-
-        return numbers;
-    }
     public static ArrayList<Integer> fromByteToArrayInt(byte[] bytes){
         ArrayList<Integer> numbers = new ArrayList<>();
         int n = 0;
