@@ -11,6 +11,8 @@ import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
+import static it.unipi.mrcv.data_structures.Document.calculateScoreStaticBM25;
+import static it.unipi.mrcv.data_structures.Document.calculateScoreStaticTFIDF;
 import static it.unipi.mrcv.global.Global.docLengths;
 
 public class MaxScore {
@@ -62,14 +64,15 @@ public class MaxScore {
             for (int i = pivot; i < postingLists.size(); i++) {
                 PostingList pl = postingLists.get(i);
                 Posting p = pl.getCurrent();
-                if (p.getDocid() == currentDocId) {
+                if (p!=null && p.getDocid() == currentDocId) {
                     score += calculateScore(p, dictionaryElems.get(i));
-                    pl.next();
-                    p = pl.getCurrent();
+                    p=pl.next();
+
                 }
-                if (p.getDocid() < next) {
+                if (p!=null && p.getDocid() < next) {
                     next = p.getDocid();
                 }
+
             }
 
             // Process the non-essential lists
@@ -101,15 +104,14 @@ public class MaxScore {
             }
 
             // Find the next document to process
-            if(next == currentDocId)
-                break;
+
+
             if (next == Global.collectionLength)
                 currentDocId = -1;
             else if (next > currentDocId)
                 currentDocId = next;
 
         }
-
         return decQueue;
     }
 
@@ -144,11 +146,11 @@ public class MaxScore {
     }
 
     private static double calculateScore(Posting posting, DictionaryElem dictionaryElem) {
-        Document tempDoc = new Document(posting.getDocid(), 0.0);
+
         if(Global.isBM25 == false)
-            tempDoc.calculateScoreTFIDF(dictionaryElem.getIdf(), posting.getFrequency());
+            return calculateScoreStaticTFIDF(dictionaryElem.getIdf(), posting.getFrequency());
         else
-            tempDoc.calculateScoreBM25(posting.getFrequency(), dictionaryElem.getDf(), docLengths.get(posting.getDocid()));
-        return tempDoc.getScore();
+            return calculateScoreStaticBM25(dictionaryElem.getIdf(),posting.getFrequency(), docLengths.get(posting.getDocid()));
+
     }
 }

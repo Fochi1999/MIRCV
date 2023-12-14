@@ -102,6 +102,9 @@ public class PostingList {
 
     }
     public Posting getCurrent(){
+        if(currentPosition==-1){
+            return null;
+        }
         if(currentPosition < postings.size()){
             return postings.get(currentPosition);
         }
@@ -127,10 +130,12 @@ public class PostingList {
                     return postings.get(currentPosition);
                 }
                 else{
+                    currentPosition=-1; //finished the pl
                     return null;
                 }
             }
             else{
+                currentPosition=-1;
                 return null;
             }
         }
@@ -141,11 +146,11 @@ public class PostingList {
         // check the last docId of the current block
         if (skipElems != null) {
 
-            while (skipElems.get(currentBlock).getDocID() < docid && currentBlock < skipElems.size()) {
-
+            while (currentBlock < skipElems.size() && skipElems.get(currentBlock).getDocID() < docid) {
                 currentBlock++;
             }
             if (currentBlock == skipElems.size()) {
+                currentPosition=-1;
                 return null;
             }
 
@@ -162,7 +167,6 @@ public class PostingList {
             }
         }
 
-
         if (postings.isEmpty()) {
             return null;
         }
@@ -176,17 +180,18 @@ public class PostingList {
             int mid = (low + high) >>> 1;
             Posting midPosting = postings.get(mid);
             int midDocId = midPosting.getDocid();
-
             if (midDocId < docid) {
                 low = mid + 1;
             } else if (midDocId > docid) {
                 high = mid - 1;
             } else {
+                currentPosition=mid;
                 return midPosting;
             }
         }
 
         if (low < postings.size()) {
+            currentPosition=low;
             return postings.get(low);
         } else {
             return null;

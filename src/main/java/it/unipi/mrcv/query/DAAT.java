@@ -51,7 +51,7 @@ public class DAAT {
 
                 if (p.getDocid() == minDocId) {
                     if (Global.isBM25) {
-                        d.calculateScoreBM25(p.getFrequency(), dictionaryElems.get(i).getDf(), docLengths.get(minDocId));
+                        d.calculateScoreBM25(dictionaryElems.get(i).getIdf(),p.getFrequency(), docLengths.get(minDocId));
                     } else {
                         d.calculateScoreTFIDF(dictionaryElems.get(i).getIdf(), p.getFrequency());
                     }

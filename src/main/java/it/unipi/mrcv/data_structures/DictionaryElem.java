@@ -132,7 +132,7 @@ public class DictionaryElem {
         double k1 = 1.2;
         double b = 0.75;
         double tf = this.maxTF;
-        double idf = Math.log((collectionLength - this.df + 0.5) / (this.df + 0.5)); // Adjusted IDF formula for BM25
+        double idf = this.idf;
         double numerator = tf * (k1 + 1);
         double denominator = tf + k1 * (1 - b + b * (docLength / averageDocLength));
         // maxBM25 is the maximum BM25 between the current one and the one computed for the current document

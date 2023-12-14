@@ -1,6 +1,7 @@
 package it.unipi.mrcv.data_structures;
 
 import static it.unipi.mrcv.global.Global.averageDocLength;
+import static it.unipi.mrcv.global.Global.collectionLength;
 
 public class Document {
     int docId;
@@ -26,6 +27,19 @@ public class Document {
     public void calculateScoreTFIDF(double idf, int tf) {
 
         this.score += idf * (1 + Math.log10(tf));
+    }
+    public static double calculateScoreStaticBM25(double idf, int tf, int docLength) {
+        double k1 = 1.2;
+        double b = 0.75;
+        double numerator = tf * (k1 + 1);
+        double denominator = tf + k1 * (1 - b + b * (docLength / averageDocLength));
+        return idf * numerator / denominator;
+
+
+    }
+
+    public static double calculateScoreStaticTFIDF(double idf, int tf){
+        return idf*(1+Math.log10(tf));
     }
 
     public double getScore() {
