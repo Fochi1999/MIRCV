@@ -110,7 +110,6 @@ public class Merger {
         // populate the docLengths array with the document lengths
         for (int i = 0; i < collectionLength; i++) {
             docIndex.seek(i * 11 + 7);
-            //System.out.println(i);
             docLengths[i] = docIndex.readInt();
         }
         // close the docIndex file
@@ -202,9 +201,11 @@ public class Merger {
                         // the step is the number of bytes needed to store the block, it varies based on the compression
                         int docStep=blockLength*4;
                         int freqStep=blockLength*4;
-                        byte[] blockDocs;
-                        byte[] blockFreqs;
+                        // if compression is active use VariableByte to compress docids and Unary to compress frequencies
                         if(compression==true){
+                            byte[] blockDocs;
+                            byte[] blockFreqs;
+                            //the step is the number of bytes needed to store the block, it varies based on the docids and frequencies
                             blockDocs=VariableByte.fromArrayIntToVarByte(new ArrayList<Integer>( temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size()))));
                             blockFreqs=Unary.ArrayIntToUnary(new ArrayList<Integer>(temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size()))));
                             docStep=blockDocs.length;
@@ -214,6 +215,14 @@ public class Merger {
                             docsBuffer.put(blockDocs);
                             freqsBuffer.put(blockFreqs);
 
+                        }else{
+                            // if compression is not active, write the docIds and frequencies in the file, 4 bytes for each entry
+                            docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, docOff, blockLength * 4);
+                            freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, freqOff, blockLength * 4);
+                            for (int j = 0; j < blockLength; j++) {
+                                docsBuffer.putInt(temporaryDocIds.get(Math.min(i + j, temporaryDocIds.size()-1)));
+                                freqsBuffer.putInt(temporaryFreqs.get(Math.min(i + j, temporaryFreqs.size()-1)));
+                            }
                         }
                         // create the skip element and add it to the skipList
                         SkipElem skipElem = new SkipElem();
@@ -243,7 +252,7 @@ public class Merger {
                     // clear the skipList
                     skipList.clear();
                 }
-                else {
+                else { //skip not used
                     // if compression is active use VariableByte to compress docids and Unary to compress frequencies
                     if(compression==true){
                         byte[] temporaryDocIdsBytes = VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);

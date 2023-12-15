@@ -21,8 +21,6 @@ public class MaxScore {
         // Priority queues for documents
         PriorityQueue<Document> incQueue = new PriorityQueue<>(k, new IncComparatorDocument());
         PriorityQueue<Document> decQueue = new PriorityQueue<>(k, new DecComparatorDocument());
-        long startTime1,startTime2,startTime3, endTime1,endTime2,endTime3;
-        long totalTime1=0,totalTime2=0,totalTime3=0;
         // Load PostingLists and DictionaryElems for each query term
         ArrayList<PostingList> postingLists = new ArrayList<>();
         ArrayList<DictionaryElem> dictionaryElems = new ArrayList<>();
