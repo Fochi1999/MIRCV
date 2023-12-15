@@ -21,7 +21,8 @@ public class MaxScore {
         // Priority queues for documents
         PriorityQueue<Document> incQueue = new PriorityQueue<>(k, new IncComparatorDocument());
         PriorityQueue<Document> decQueue = new PriorityQueue<>(k, new DecComparatorDocument());
-
+        long startTime1,startTime2,startTime3, endTime1,endTime2,endTime3;
+        long totalTime1=0,totalTime2=0,totalTime3=0;
         // Load PostingLists and DictionaryElems for each query term
         ArrayList<PostingList> postingLists = new ArrayList<>();
         ArrayList<DictionaryElem> dictionaryElems = new ArrayList<>();
@@ -67,7 +68,6 @@ public class MaxScore {
                 if (p!=null && p.getDocid() == currentDocId) {
                     score += calculateScore(p, dictionaryElems.get(i));
                     p=pl.next();
-
                 }
                 if (p!=null && p.getDocid() < next) {
                     next = p.getDocid();
@@ -84,6 +84,7 @@ public class MaxScore {
                 Posting p = pl.nextGEQ(currentDocId);
                 if (p != null && p.getDocid() == currentDocId) {
                     score += calculateScore(p, dictionaryElems.get(i));
+                    pl.next();
                 }
             }
 

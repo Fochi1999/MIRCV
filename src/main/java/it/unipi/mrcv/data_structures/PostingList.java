@@ -41,7 +41,7 @@ public class PostingList {
         this.term = elem.getTerm();
         this.postings = new ArrayList<>();
         currentPosition = 0;
-        if(compression == true) {
+        if(compression) {
             if (elem.getSkipLen() != 0) {
                 this.skipElems = SkipElem.readSkipList(elem.getOffsetSkip(), elem.getSkipLen());
                 loadBlock(skipElems.get(0).getOffsetDoc(),
@@ -152,17 +152,48 @@ public class PostingList {
     // nextGEQ returns the first posting with docid greater or equal to docid
     public Posting nextGEQ(int docid) {
         // check the last docId of the current block
+        //check that the currentId is not greater than the requested one
+        if(currentBlock>=skipElems.size()){
+            return null;
+        }
+        if(this.getCurrent()==null){
+            return null;
+        }
+        if(this.getCurrent().getDocid()>=docid){
+            return this.getCurrent();
+        }
 
-        if (skipElems != null) {
+        //check which block is the one we are looking for (the first docId is greater or equal to the requested one)
+        if (skipElems != null && skipElems.get(currentBlock).getDocID() <= docid) {
+
+           //NON BINARY
 
             while (currentBlock < skipElems.size() && skipElems.get(currentBlock).getDocID() < docid) {
                 currentBlock++;
             }
+
+            //BINARY (doesn't work)
+/*
+            int low = currentBlock;
+            int high = skipElems.size() - 1;
+            while(high>low && currentBlock<skipElems.size()){
+                currentBlock=(low+high)/2;
+                if(skipElems.get(currentBlock).getDocID()<docid){
+                    low=currentBlock+1;
+                }
+                else if(skipElems.get(currentBlock).getDocID()>docid){
+                    if(skipElems.get(currentBlock-1).getDocID()<docid){
+                        break;
+                    }
+                    high=currentBlock-1;
+                }
+
+            }*/
+
             if (currentBlock == skipElems.size()) {
                 currentPosition=-1;
                 return null;
             }
-
             currentPosition = 0;
             try {
                 loadBlock(skipElems.get(currentBlock).getOffsetDoc(), skipElems.get(currentBlock).getOffsetFreq(), skipElems.get(currentBlock).getDocBlockLen(), skipElems.get(currentBlock).getFreqBlockLen());

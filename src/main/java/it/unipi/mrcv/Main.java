@@ -20,12 +20,13 @@ import java.util.PriorityQueue;
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-/*        Global.indexing = true;
+        /*Global.indexing = true;
         Global.load();
         SPIMI.exeSPIMI("collection.tsv");
         Global.load();
         Merger.Merge();
-        System.out.printf("End");*/
+        System.out.printf("End");
+        SPIMI.readDictionaryToFile(Global.finalVocCompressed,"voz.txt");*/
         Global.indexing = false;
         Global.load();
         ArrayList<String> query = new ArrayList<>();
