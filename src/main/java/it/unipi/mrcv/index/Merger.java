@@ -23,7 +23,7 @@ import java.util.PriorityQueue;
 
 import static it.unipi.mrcv.global.Global.collectionLength;
 import static it.unipi.mrcv.global.Global.skippingFile;
-//TODO create collectionInfo.txt file with collection length and average doc length
+
 //java class that merges the partial indexes composed of the indexes with the docids and the indexes with the frequencies
 public class Merger {
 
@@ -32,7 +32,7 @@ public class Merger {
     public static int num_blocks = SPIMI.counterBlock;
 
     //flag compression
-    public static boolean compression=Global.compression;
+    public static boolean compression = Global.compression;
 
 
     public static void Merge() throws IOException {
@@ -78,9 +78,9 @@ public class Merger {
         // ArrayList used to store the skip elements of the current term
         ArrayList<SkipElem> skipList = new ArrayList<>();
         // if flag compression is set on false change files names
-        String pathDocs= !Global.compression?Global.finalDoc:Global.finalDocCompressed;
-        String pathFreqs= !Global.compression?Global.finalFreq:Global.finalFreqCompressed;
-        String pathVoc= !Global.compression?Global.finalVoc:Global.finalVocCompressed;
+        String pathDocs = !Global.compression ? Global.finalDoc : Global.finalDocCompressed;
+        String pathFreqs = !Global.compression ? Global.finalFreq : Global.finalFreqCompressed;
+        String pathVoc = !Global.compression ? Global.finalVoc : Global.finalVocCompressed;
 
         // initialize the pointers to the partial vocabularies and the priority queue
         for (int i = 0; i < num_blocks; i++) {
@@ -134,7 +134,7 @@ public class Merger {
                 FileChannel skipFchan = (FileChannel) Files.newByteChannel(Paths.get(skippingFile),
                         StandardOpenOption.WRITE,
                         StandardOpenOption.READ,
-                        StandardOpenOption.CREATE)){
+                        StandardOpenOption.CREATE)) {
 
 
             // the whole merge is done in this while loop
@@ -177,8 +177,8 @@ public class Merger {
                 temporaryElem.getDictionaryElem().setIdf();
                 // set max term frequency of the temporaryElem
                 for (int i = 0; i < temporaryFreqs.size(); i++) {
-                        if (temporaryFreqs.get(i) > temporaryElem.getDictionaryElem().getMaxTF()) {
-                            temporaryElem.getDictionaryElem().setMaxTF(temporaryFreqs.get(i));
+                    if (temporaryFreqs.get(i) > temporaryElem.getDictionaryElem().getMaxTF()) {
+                        temporaryElem.getDictionaryElem().setMaxTF(temporaryFreqs.get(i));
                     }
                 }
                 // set max TFIDF of the temporaryElem
@@ -190,43 +190,40 @@ public class Merger {
                 }
 
 
-
-
-
                 // implement skipping
-                if(temporaryDocIds.size() >= 1024){
+                if (temporaryDocIds.size() >= 1024) {
                     blockLength = (int) Math.ceil(Math.sqrt(temporaryDocIds.size()));
                     // for every blockLength docIds, create a skip element and add it to the skipList
-                    for(int i = 0; i < temporaryDocIds.size(); i += blockLength){
+                    for (int i = 0; i < temporaryDocIds.size(); i += blockLength) {
                         // the step is the number of bytes needed to store the block, it varies based on the compression
-                        int docStep=blockLength*4;
-                        int freqStep=blockLength*4;
+                        int docStep = blockLength * 4;
+                        int freqStep = blockLength * 4;
                         // if compression is active use VariableByte to compress docids and Unary to compress frequencies
-                        if(compression==true){
+                        if (compression == true) {
                             byte[] blockDocs;
                             byte[] blockFreqs;
                             //the step is the number of bytes needed to store the block, it varies based on the docids and frequencies
-                            blockDocs=VariableByte.fromArrayIntToVarByte(new ArrayList<Integer>( temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size()))));
-                            blockFreqs=Unary.ArrayIntToUnary(new ArrayList<Integer>(temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size()))));
-                            docStep=blockDocs.length;
-                            freqStep=blockFreqs.length;
+                            blockDocs = VariableByte.fromArrayIntToVarByte(new ArrayList<Integer>(temporaryDocIds.subList(i, Math.min(i + blockLength, temporaryDocIds.size()))));
+                            blockFreqs = Unary.ArrayIntToUnary(new ArrayList<Integer>(temporaryFreqs.subList(i, Math.min(i + blockLength, temporaryFreqs.size()))));
+                            docStep = blockDocs.length;
+                            freqStep = blockFreqs.length;
                             docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, docOff, docStep);
                             freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, freqOff, freqStep);
                             docsBuffer.put(blockDocs);
                             freqsBuffer.put(blockFreqs);
 
-                        }else{
+                        } else {
                             // if compression is not active, write the docIds and frequencies in the file, 4 bytes for each entry
                             docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, docOff, blockLength * 4);
                             freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, freqOff, blockLength * 4);
                             for (int j = 0; j < blockLength; j++) {
-                                docsBuffer.putInt(temporaryDocIds.get(Math.min(i + j, temporaryDocIds.size()-1)));
-                                freqsBuffer.putInt(temporaryFreqs.get(Math.min(i + j, temporaryFreqs.size()-1)));
+                                docsBuffer.putInt(temporaryDocIds.get(Math.min(i + j, temporaryDocIds.size() - 1)));
+                                freqsBuffer.putInt(temporaryFreqs.get(Math.min(i + j, temporaryFreqs.size() - 1)));
                             }
                         }
                         // create the skip element and add it to the skipList
                         SkipElem skipElem = new SkipElem();
-                        skipElem.setDocID(temporaryDocIds.get(Math.min(i + blockLength, temporaryDocIds.size()-1)));
+                        skipElem.setDocID(temporaryDocIds.get(Math.min(i + blockLength, temporaryDocIds.size() - 1)));
                         skipElem.setOffsetDoc(docOff);
                         skipElem.setOffsetFreq(freqOff);
                         skipElem.setDocBlockLen(docStep);
@@ -239,7 +236,7 @@ public class Merger {
                     // write the skipList in the skip file
                     skipBuffer = skipFchan.map(FileChannel.MapMode.READ_WRITE, skipOff, skipList.size() * SkipElem.size());
                     // call the method to write the skipList in the file
-                    for(int i = 0; i < skipList.size(); i++){
+                    for (int i = 0; i < skipList.size(); i++) {
                         skipList.get(i).writeToFile(skipBuffer);
                     }
                     // update the statistics of the temporaryElem
@@ -251,10 +248,9 @@ public class Merger {
                     skipOff += skipList.size() * SkipElem.size();
                     // clear the skipList
                     skipList.clear();
-                }
-                else { //skip not used
+                } else { //skip not used
                     // if compression is active use VariableByte to compress docids and Unary to compress frequencies
-                    if(compression==true){
+                    if (compression == true) {
                         byte[] temporaryDocIdsBytes = VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);
                         byte[] temporaryFreqsBytes = Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs);
                         //set the offset for the next term and open the buffers
