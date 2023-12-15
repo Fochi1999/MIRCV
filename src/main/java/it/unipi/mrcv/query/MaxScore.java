@@ -84,7 +84,7 @@ public class MaxScore {
                 Posting p = pl.nextGEQ(currentDocId);
                 if (p != null && p.getDocid() == currentDocId) {
                     score += calculateScore(p, dictionaryElems.get(i));
-                    pl.next();
+
                 }
             }
 
