@@ -26,7 +26,7 @@ public class QueryTester {
                 String queryId = parts[0];
                 String query = parts[1];
 
-                PriorityQueue<Document> queue = DAAT.executeDAAT(preprocess.all(query), 20);
+                PriorityQueue<Document> queue = DAAT.executeDAAT(preprocess.all(query), 10);
                 int position = 1;
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
@@ -95,17 +95,17 @@ public class QueryTester {
         Global.load();
 
         // uncomment to produce the results file for the TREC 2020 competition
-/*        try {
-            processQueries("msmarco-test2020-queries.tsv", "2020queryResults.txt");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
-
-        // uncomment to analyze the query time for MaxScore and DAAT using the TREC 2020 queries
         try {
-            analyzeQueryTime("msmarco-test2020-queries.tsv");
+            processQueries("msmarco-test2020-queries.tsv", "2020queryResults10.txt");
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // uncomment to analyze the query time for MaxScore and DAAT using the TREC 2020 queries
+/*        try {
+            analyzeQueryTime("msmarco-test2020-queries.tsv");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
     }
 }
