@@ -291,8 +291,8 @@ public class DictionaryElem {
             } while ((!readElem.getTerm().equals(term)));
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return new DictionaryElem();
+            System.out.println(term+": "+e.getMessage());
+            return null;
         }
         return readElem;
     }

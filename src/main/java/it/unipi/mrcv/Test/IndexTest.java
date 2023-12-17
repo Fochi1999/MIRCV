@@ -11,11 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
 public class IndexTest {
-    //static method that receives in input the path of the file containing the terms, create a posting list for each term and check if the posting list is correct
-    public static void test(String path) {
+    //static method that receives in input the path of the file containing the terms, retrieve the posting list for each term and check if the posting list is correct
+    public static void testPostingLists(String path) {
         try {
             List<String> terms = null;
 
