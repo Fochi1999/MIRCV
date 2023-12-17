@@ -300,7 +300,7 @@ public class Merger {
         }
 
         // save the collection length and the average doc length in a file
-        Files.write(Paths.get("collectionInfo.txt"), (collectionLength + "\n" + Global.averageDocLength).getBytes());
+        Files.write(Paths.get(Global.collectionInfoFile), (collectionLength + "\n" + Global.averageDocLength + "\n" + Global.compression + "\n" + Global.stopWords + "\n" + Global.stem).getBytes());
 
     }
 

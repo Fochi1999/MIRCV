@@ -23,6 +23,7 @@ public class Global {
     public static final String finalDocCompressed="docIdsCompressed";
     public static final String finalFreqCompressed="frequenciesCompressed";
     public static final String finalStopWordsFile="stopwords-en.txt";
+    public static final String collectionInfoFile="collectionInfo.txt";
     public static boolean compression=true;
     public static boolean stem=true;
     public static boolean stopWords=true;
@@ -39,13 +40,7 @@ public class Global {
     public static FileChannel skippingChannel;
 
     public static void load() {
-        try {
-            List<String> stopWordsList = Files.readAllLines(Paths.get(finalStopWordsFile));
-            stopWordsSet = new HashSet<>(stopWordsList);
-        } catch (IOException e) {
-            System.out.println("Can't read Stopword file, flag stopwords set to false");
-            stopWords = false;
-        }
+
 
         if(indexing==false) {
             // load collection length and average doc length
@@ -53,6 +48,9 @@ public class Global {
                 List<String> collectionInfo = Files.readAllLines(Paths.get("collectionInfo.txt"));
                 collectionLength = Integer.parseInt(collectionInfo.get(0));
                 averageDocLength = Double.parseDouble(collectionInfo.get(1));
+                compression = Boolean.parseBoolean(collectionInfo.get(2));
+                stopWords = Boolean.parseBoolean(collectionInfo.get(3));
+                stem = Boolean.parseBoolean(collectionInfo.get(4));
             } catch (IOException e) {
                 System.out.println("Can't read collectionInfo file");
             }
@@ -93,6 +91,15 @@ public class Global {
             } catch (IOException e) {
                 System.out.println("Can't read docIndex file");
             }
+        }
+        try {
+            if(stopWords==true) {
+                List<String> stopWordsList = Files.readAllLines(Paths.get(finalStopWordsFile));
+                stopWordsSet = new HashSet<>(stopWordsList);
+            }
+        } catch (IOException e) {
+            System.out.println("Can't read Stopword file, flag stopwords set to false");
+            stopWords = false;
         }
 
 

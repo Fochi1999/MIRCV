@@ -61,7 +61,7 @@ public class fileUtils {
             @Override
             public boolean accept(final File dir,
                                   final String name) {
-                String regexString = "^(" + Global.finalFreqCompressed + "|" + Global.finalDocCompressed + "|" + Global.finalVocCompressed + ").*";
+                String regexString = "^(" + Global.finalFreqCompressed + "|" + Global.finalDocCompressed + "|" + Global.finalVocCompressed + "|" + Global.skippingFile + "|" + "docIndex" + "|" + "collectionInfo.txt" +").*";
                 return name.matches(regexString);
             }
         });
