@@ -2,12 +2,10 @@ package it.unipi.mrcv.query;
 
 import it.unipi.mrcv.data_structures.Document;
 import it.unipi.mrcv.global.Global;
+import it.unipi.mrcv.index.fileUtils;
 import it.unipi.mrcv.preprocess.preprocess;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.PriorityQueue;
 
 
@@ -39,6 +37,9 @@ public class QueryTester {
 
     // Method used to analyze the query time for MaxScore and DAAT using the TREC 2020 queries
     public static void analyzeQueryTime(String inputFilePath) throws IOException {
+        // pointer to read from the docIndex file and return the docNumber
+        RandomAccessFile raf = new RandomAccessFile(new File(Global.prefixDocIndex), "r");
+
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
             String line;
 
@@ -60,7 +61,7 @@ public class QueryTester {
                 PriorityQueue<Document> queue = MaxScore.executeMaxScore(preprocess.all(query), 20);
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
-                    System.out.println("MaxSCORE: " + doc.getDocId() + " " + doc.getScore());
+                    System.out.println("MaxSCORE: " + fileUtils.getDocNumber(doc.getDocId(), raf) + " " + doc.getScore());
                 }
                 long endTime = System.currentTimeMillis();
                 long maxScoreTime = endTime - startTime;
@@ -72,7 +73,7 @@ public class QueryTester {
                 queue = DAAT.executeDAAT(preprocess.all(query), 20);
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
-                    System.out.println("DAAT: " + doc.getDocId() + " " + doc.getScore());
+                    System.out.println("DAAT: " + fileUtils.getDocNumber(doc.getDocId(), raf) + " " + doc.getScore());
                 }
                 endTime = System.currentTimeMillis();
                 long daatTime = endTime - startTime;
@@ -84,7 +85,7 @@ public class QueryTester {
                 queue = ConjunctiveQuery.executeConjunctiveQuery(preprocess.all(query), 20);
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
-                    System.out.println("conjunctive: " + doc.getDocId() + " " + doc.getScore());
+                    System.out.println("conjunctive: " + fileUtils.getDocNumber(doc.getDocId(), raf) + " " + doc.getScore());
                 }
                 endTime = System.currentTimeMillis();
                 long conjunctiveTime = endTime - startTime;

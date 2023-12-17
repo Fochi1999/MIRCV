@@ -455,10 +455,9 @@ public class fileUtils {
     }
 
     // Function that reads the docNumber of a document from the docIndex file given the docId
-    public static String getDocNumber(int docId) {
+    public static String getDocNumber(int docId, RandomAccessFile raf) {
         String docNumber = "";
         try {
-            RandomAccessFile raf = new RandomAccessFile(new File(Global.prefixDocIndex), "r");
             byte[] b = new byte[7];
             raf.seek(docId * 11);
             raf.read(b);
@@ -468,4 +467,5 @@ public class fileUtils {
         }
         return docNumber;
     }
+
 }
