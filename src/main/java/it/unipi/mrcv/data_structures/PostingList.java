@@ -151,49 +151,52 @@ public class PostingList {
 
     // nextGEQ returns the first posting with docid greater or equal to docid
     public Posting nextGEQ(int docid) {
-        // check the last docId of the current block
-        //check that the currentId is not greater than the requested one
-        if(currentBlock>=skipElems.size()){
+
+        // check if the blocks are finished
+        if(skipElems != null && currentBlock >= skipElems.size()){
             return null;
         }
+        // check if the posting list is empty
         if(this.getCurrent()==null){
             return null;
         }
+        // check that the currentId is not greater than the requested one
         if(this.getCurrent().getDocid()>=docid){
             return this.getCurrent();
         }
 
-        //check which block is the one we are looking for (the first docId is greater or equal to the requested one)
+        // check which block is the one we are looking for and load it if there is a skip list
         if (skipElems != null && skipElems.get(currentBlock).getDocID() <= docid) {
 
-           //NON BINARY
-
-            while (currentBlock < skipElems.size() && skipElems.get(currentBlock).getDocID() < docid) {
-                currentBlock++;
-            }
-
-            //BINARY (doesn't work)
-/*
-            int low = currentBlock;
-            int high = skipElems.size() - 1;
-            while(high>low && currentBlock<skipElems.size()){
-                currentBlock=(low+high)/2;
-                if(skipElems.get(currentBlock).getDocID()<docid){
-                    low=currentBlock+1;
-                }
-                else if(skipElems.get(currentBlock).getDocID()>docid){
-                    if(skipElems.get(currentBlock-1).getDocID()<docid){
-                        break;
-                    }
-                    high=currentBlock-1;
-                }
-
-            }*/
-
-            if (currentBlock == skipElems.size()) {
+            // check if there is not a GEQ in the posting list
+            if (skipElems.get(skipElems.size() -1).getDocID() < docid) {
                 currentPosition=-1;
                 return null;
             }
+
+            // BINARY SEARCH OF THE BLOCK
+            int low = currentBlock;
+            int end = skipElems.size();
+            int mid;
+
+            while (low < end) {
+                mid = low + ((end- low) >>> 1);
+
+                if (skipElems.get(mid).getDocID() < docid) {
+                    low = mid + 1;
+                } else {
+                    end = mid;
+                }
+            }
+
+            if (low < skipElems.size() && skipElems.get(low).getDocID() >= docid) {
+                currentBlock = low;
+            } else {
+                currentPosition=-1;
+                return null;
+            }
+
+            // load the block
             currentPosition = 0;
             try {
                 loadBlock(skipElems.get(currentBlock).getOffsetDoc(), skipElems.get(currentBlock).getOffsetFreq(), skipElems.get(currentBlock).getDocBlockLen(), skipElems.get(currentBlock).getFreqBlockLen());
@@ -202,6 +205,7 @@ public class PostingList {
             }
 
         }
+        // if there is not a skip list, we have to check if the last posting is greater than the requested one
         else {
             if (postings.get(postings.size() - 1).getDocid() < docid) {
                 return null;
@@ -210,7 +214,8 @@ public class PostingList {
         if (postings.isEmpty()) {
             return null;
         }
-        // binary search of the docid
+
+        // BINARY SEARCH OF THE DOCID
         int low = currentPosition;
         int high = postings.size() - 1;
 

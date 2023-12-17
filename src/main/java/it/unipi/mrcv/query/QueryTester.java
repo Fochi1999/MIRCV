@@ -44,6 +44,7 @@ public class QueryTester {
 
             long totalDAATTime = 0;
             long totalMaxScoreTime = 0;
+            long totalConjunctiveTime = 0;
             int queryCount = 0;
 
             while ((line = reader.readLine()) != null) {
@@ -78,12 +79,25 @@ public class QueryTester {
                 totalDAATTime += daatTime;
                 System.out.println("DAAT time for " + queryId + ": " + daatTime + " ms");
 
+                // conjunctive
+                startTime = System.currentTimeMillis();
+                queue = ConjunctiveQuery.executeConjunctiveQuery(preprocess.all(query), 20);
+                while (!queue.isEmpty()) {
+                    Document doc = queue.poll();
+                    System.out.println("conjunctive: " + doc.getDocId() + " " + doc.getScore());
+                }
+                endTime = System.currentTimeMillis();
+                long conjunctiveTime = endTime - startTime;
+                totalConjunctiveTime += conjunctiveTime;
+                System.out.println("conjunctive time for " + queryId + ": " + conjunctiveTime + " ms");
+
                 queryCount++;
             }
 
             if (queryCount > 0) {
                 System.out.println("Average MaxScore Time: " + (totalMaxScoreTime / queryCount) + " ms");
                 System.out.println("Average DAAT Time: " + (totalDAATTime / queryCount) + " ms");
+                System.out.println("Average Conjunctive Time: " + (totalConjunctiveTime / queryCount) + " ms");
             }
         }
     }
@@ -95,17 +109,17 @@ public class QueryTester {
         Global.load();
 
         // uncomment to produce the results file for the TREC 2020 competition
-        try {
+/*        try {
             processQueries("msmarco-test2020-queries.tsv", "2020queryResults10.txt");
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
         // uncomment to analyze the query time for MaxScore and DAAT using the TREC 2020 queries
-/*        try {
+        try {
             analyzeQueryTime("msmarco-test2020-queries.tsv");
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
     }
 }

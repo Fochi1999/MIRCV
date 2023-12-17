@@ -109,7 +109,7 @@ public class Merger {
 
         // populate the docLengths array with the document lengths
         for (int i = 0; i < collectionLength; i++) {
-            docIndex.seek(i * 11 + 7);
+            docIndex.seek(i * 11L + 7);
             docLengths[i] = docIndex.readInt();
         }
         // close the docIndex file
@@ -199,7 +199,7 @@ public class Merger {
                         int docStep = blockLength * 4;
                         int freqStep = blockLength * 4;
                         // if compression is active use VariableByte to compress docids and Unary to compress frequencies
-                        if (compression == true) {
+                        if (compression) {
                             byte[] blockDocs;
                             byte[] blockFreqs;
                             //the step is the number of bytes needed to store the block, it varies based on the docids and frequencies
@@ -214,8 +214,8 @@ public class Merger {
 
                         } else {
                             // if compression is not active, write the docIds and frequencies in the file, 4 bytes for each entry
-                            docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, docOff, blockLength * 4);
-                            freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, freqOff, blockLength * 4);
+                            docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, docOff, blockLength * 4L);
+                            freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, freqOff, blockLength * 4L);
                             for (int j = 0; j < blockLength; j++) {
                                 docsBuffer.putInt(temporaryDocIds.get(Math.min(i + j, temporaryDocIds.size() - 1)));
                                 freqsBuffer.putInt(temporaryFreqs.get(Math.min(i + j, temporaryFreqs.size() - 1)));
@@ -234,7 +234,7 @@ public class Merger {
                         freqOff += freqStep;
                     }
                     // write the skipList in the skip file
-                    skipBuffer = skipFchan.map(FileChannel.MapMode.READ_WRITE, skipOff, skipList.size() * SkipElem.size());
+                    skipBuffer = skipFchan.map(FileChannel.MapMode.READ_WRITE, skipOff, (long) skipList.size() * SkipElem.size());
                     // call the method to write the skipList in the file
                     for (int i = 0; i < skipList.size(); i++) {
                         skipList.get(i).writeToFile(skipBuffer);
@@ -245,12 +245,13 @@ public class Merger {
                     temporaryElem.getDictionaryElem().setLengthDocIds((int) (docOff - latestDocOff));
                     temporaryElem.getDictionaryElem().setLengthFreq((int) (freqOff - latestFreqOff));
                     // update the offset of the skip information
-                    skipOff += skipList.size() * SkipElem.size();
+                    skipOff += (long) skipList.size() * SkipElem.size();
                     // clear the skipList
                     skipList.clear();
+
                 } else { //skip not used
                     // if compression is active use VariableByte to compress docids and Unary to compress frequencies
-                    if (compression == true) {
+                    if (compression) {
                         byte[] temporaryDocIdsBytes = VariableByte.fromArrayIntToVarByte((ArrayList<Integer>) temporaryDocIds);
                         byte[] temporaryFreqsBytes = Unary.ArrayIntToUnary((ArrayList<Integer>) temporaryFreqs);
                         //set the offset for the next term and open the buffers
@@ -265,10 +266,10 @@ public class Merger {
                         temporaryElem.getDictionaryElem().setLengthFreq(temporaryFreqsBytes.length);
 
                     } else {
-                        docOff += temporaryElem.getDictionaryElem().getLengthDocIds() * 4;
-                        freqOff += temporaryElem.getDictionaryElem().getLengthDocIds() * 4;
-                        docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, latestDocOff, temporaryDocIds.size() * 4);
-                        freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestFreqOff, temporaryFreqs.size() * 4);
+                        docOff += temporaryElem.getDictionaryElem().getLengthDocIds() * 4L;
+                        freqOff += temporaryElem.getDictionaryElem().getLengthDocIds() * 4L;
+                        docsBuffer = docsFchan.map(FileChannel.MapMode.READ_WRITE, latestDocOff, temporaryDocIds.size() * 4L);
+                        freqsBuffer = freqsFchan.map(FileChannel.MapMode.READ_WRITE, latestFreqOff, temporaryFreqs.size() * 4L);
                         for (int i = 0; i < temporaryElem.getDictionaryElem().getLengthDocIds(); i++) {
                             docsBuffer.putInt(temporaryDocIds.get(i));
                             freqsBuffer.putInt(temporaryFreqs.get(i));
@@ -282,16 +283,17 @@ public class Merger {
                     temporaryElem.getDictionaryElem().setSkipLen(0);
                 }
 
-                //
+                // update the offset of the docIds and frequencies
                 temporaryElem.getDictionaryElem().setOffsetFreq(latestFreqOff);
                 temporaryElem.getDictionaryElem().setOffsetDoc(latestDocOff);
+                // write the vocabulary entry in the vocabulary file
                 vocBuffer = vocabularyFchan.map(FileChannel.MapMode.READ_WRITE, termNumber * DictionaryElem.size(), DictionaryElem.size());
                 termNumber++;
                 temporaryElem.getDictionaryElem().writeElemToDisk(vocBuffer);
                 temporaryDocIds.clear();
                 temporaryFreqs.clear();
 
-            } //fine while
+            } // end while
 
         } catch (Exception e) {
             e.printStackTrace();
