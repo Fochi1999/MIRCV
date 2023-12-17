@@ -21,8 +21,8 @@ public class CLI {
     }
 
     public static void main(String[] args) throws IOException {
-/*        Global.indexing = false;
-        Global.load();*/
+        Global.indexing = false;
+        Global.load();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         RandomAccessFile raf = new RandomAccessFile(new File(Global.prefixDocIndex), "r");

@@ -44,10 +44,8 @@ public class Main {
             long elapsedTimeMinutes = (endTime - startTime) / 1000 / 60;
             // Print the execution time in minutes
             System.out.printf("Execution time: " + elapsedTimeMinutes + " minutes\n");
-            Global.indexing = false;
             System.out.println("Indexing completed");
             // reload the global variables from the collectionInfo.txt file
-            Global.load();
         }
 
         // Query mode
