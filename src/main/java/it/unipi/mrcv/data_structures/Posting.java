@@ -36,4 +36,15 @@ public class Posting {
     public String toString() {
         return "Posting{docid=" + docid + ", frequency=" + frequency + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (!(o instanceof Posting)) {
+            return false;
+        }
+        Posting p = (Posting) o;
+        return docid == p.docid &&
+                frequency == p.frequency;
+    }
 }
