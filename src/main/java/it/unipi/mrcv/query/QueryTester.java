@@ -59,11 +59,11 @@ public class QueryTester {
                 // MaxSCORE
                 long startTime = System.currentTimeMillis();
                 PriorityQueue<Document> queue = MaxScore.executeMaxScore(preprocess.all(query), 20);
+                long endTime = System.currentTimeMillis();
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
                     System.out.println("MaxSCORE: " + fileUtils.getDocNumber(doc.getDocId(), raf) + " " + doc.getScore());
                 }
-                long endTime = System.currentTimeMillis();
                 long maxScoreTime = endTime - startTime;
                 totalMaxScoreTime += maxScoreTime;
                 System.out.println("MaxScore time for " + queryId + ": " + maxScoreTime + " ms");
@@ -71,11 +71,11 @@ public class QueryTester {
                 // DAAT
                 startTime = System.currentTimeMillis();
                 queue = DAAT.executeDAAT(preprocess.all(query), 20);
+                endTime = System.currentTimeMillis();
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
                     System.out.println("DAAT: " + fileUtils.getDocNumber(doc.getDocId(), raf) + " " + doc.getScore());
                 }
-                endTime = System.currentTimeMillis();
                 long daatTime = endTime - startTime;
                 totalDAATTime += daatTime;
                 System.out.println("DAAT time for " + queryId + ": " + daatTime + " ms");
@@ -83,11 +83,11 @@ public class QueryTester {
                 // conjunctive
                 startTime = System.currentTimeMillis();
                 queue = ConjunctiveQuery.executeConjunctiveQuery(preprocess.all(query), 20);
+                endTime = System.currentTimeMillis();
                 while (!queue.isEmpty()) {
                     Document doc = queue.poll();
                     System.out.println("conjunctive: " + fileUtils.getDocNumber(doc.getDocId(), raf) + " " + doc.getScore());
                 }
-                endTime = System.currentTimeMillis();
                 long conjunctiveTime = endTime - startTime;
                 totalConjunctiveTime += conjunctiveTime;
                 System.out.println("conjunctive time for " + queryId + ": " + conjunctiveTime + " ms");
