@@ -15,10 +15,10 @@ public class VariableByte {
             ret = new byte[]{0};
             return ret;
         }
-        int n_bytes = (int) (log(input) / log(128)) + 1; //n of bytes necessary for encoding, cast to int and + 1 cause the cast "truncates" the decimal part
+        int n_bytes = (int) (log(input) / log(128)) + 1; // n of bytes necessary for encoding, cast to int and + 1 cause the cast "truncates" the decimal part
         ret = new byte[n_bytes];
-        for (int byteEncoder = n_bytes - 1; byteEncoder >= 0; byteEncoder--) { //we start encoding from the last byte 7 bits at times
-            ret[byteEncoder] = (byte) (input % 128 - 128); //all bytes before the last one are negative
+        for (int byteEncoder = n_bytes - 1; byteEncoder >= 0; byteEncoder--) { // we start encoding from the last byte 7 bits at times
+            ret[byteEncoder] = (byte) (input % 128 - 128); // all bytes before the last one are negative (starts with 1)
             input = input / 128;
         }
         ret[n_bytes - 1] += 128; //last byte is positive
@@ -26,7 +26,7 @@ public class VariableByte {
         return ret;
     }
 
-    // this method receives a byte array with the variable byte encoding of the integer and returns the integer
+    // this method receives a integer array and returns a byte array with the variable byte encoding of the integers
     public static byte[] fromArrayIntToVarByte(ArrayList<Integer> input) {
         ByteBuffer buf = ByteBuffer.allocate(input.size() * (Integer.SIZE / Byte.SIZE));
         for (int number : input)
@@ -39,15 +39,15 @@ public class VariableByte {
         return ret;
     }
 
-    // this method receives a byte array with the variable byte encoding of the integer and returns the integer
+    // this method receives a byte array with the variable byte encoding of the integer and returns an arraylist of integers
     public static ArrayList<Integer> fromByteToArrayInt(byte[] bytes) {
         ArrayList<Integer> numbers = new ArrayList<>();
         int n = 0;
         for (byte b : bytes) {
             if (b < 0) {
-                n = 128 * n + (128 + b);
+                n = 128 * n + (128 + b); //shift left of 1 byte and add the byte (the byte is negative so we add 128 to make it positive)
             } else {
-                int num = (128 * n + b);
+                int num = (128 * n + b); //shift left of 1 byte and add the last byte
                 numbers.add(num);
                 n = 0;
             }

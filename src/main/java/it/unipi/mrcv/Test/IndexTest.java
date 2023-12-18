@@ -3,6 +3,7 @@ package it.unipi.mrcv.Test;
 import it.unipi.mrcv.data_structures.DictionaryElem;
 import it.unipi.mrcv.data_structures.Posting;
 import it.unipi.mrcv.data_structures.PostingList;
+import it.unipi.mrcv.global.Global;
 import it.unipi.mrcv.preprocess.preprocess;
 
 import java.io.*;
@@ -72,13 +73,7 @@ public class IndexTest {
                     if(frequencies.get(i)!=0) {
                         Posting pNew = new Posting(docId, frequencies.get(i));
                         Posting pOld = postingLists.get(i).getCurrent();
-                        if(pNew.equals(pOld)==false) {
-                            System.out.println("Posting list for term "+dictionaryElems.get(i).getTerm()+" is not correct");
-                            System.out.println("Expected: "+pNew.toString());
-                            System.out.println("Actual: "+pOld.toString());
-                        }else{
-                            //System.out.println("Posting "+docId+" for term "+dictionaryElems.get(i).getTerm()+" is correct");
-                        }
+                        assert pOld.equals(pNew) : "Posting list for term "+dictionaryElems.get(i).getTerm()+" is not correct";
                         postingLists.get(i).next();
                     }
                 }
@@ -95,5 +90,12 @@ public class IndexTest {
 
         //static method that reads a list of terms from a file and returns a list of posting lists
 
+    //main method that calls the testPostingLists method
+    public static void main(String[] args) {
+        Global.load();
+        testPostingLists("terms.txt");
+        System.out.println("Posting lists from terms.txt are correct");
+
+    }
 
 }

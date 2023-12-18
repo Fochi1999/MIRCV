@@ -15,7 +15,7 @@ public class Unary {
         int lengthUnary;
         int j = 0;
         for (int i = 0; i < values.size(); i++) {
-            lengthUnary = BitSet.valueOf(intToUnary(values.get(i))).length();
+            lengthUnary = values.get(i);
             bitSet.set(j, j + lengthUnary);
             j = j + lengthUnary + 1;
             bitSet.set(j, false);
@@ -53,10 +53,5 @@ public class Unary {
         return bitSet.toByteArray();
     }
 
-    // this method receives a byte array with the unary encoding of the integer and returns the integer
-    public static int unaryToInt(byte[] bytes) {  //DOESNT CHECK IF ALL BYTES ARE SET TO 1
-        BitSet b = BitSet.valueOf(bytes);
-        return b.length();
-    }
 
 }

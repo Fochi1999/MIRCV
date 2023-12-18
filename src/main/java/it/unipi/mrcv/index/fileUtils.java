@@ -314,6 +314,7 @@ public class fileUtils {
     }
 
     // function that reads a compressed posting list from the disk given location and length
+    // return an array of bytes that the call has to decode using the correct de-compression algorithm
     public static byte[] readCompressed(FileChannel fchan, long offset, int lenght) {
         byte[] ret;
         try {
