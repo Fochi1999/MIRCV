@@ -39,29 +39,9 @@ public class QueryTest {
                     daatResults = DAAT.executeDAAT(tokens, numOfDocs);
                     maxScoreResults = MaxScore.executeMaxScore(tokens, numOfDocs);
                     conjunctiveResults = ConjunctiveQuery.executeConjunctiveQuery(tokens, numOfDocs);
-                    for (int i = 0; i < daatResults.size(); i++) {
-                        Document doc = daatResults.poll();
-                        if (doc.getDocId() == docId) {
-                            System.out.println("DAAT: Document " + docId + " found in position " + (i + 1));
-                            break;
-                        }
-                    }
-                    for (int i = 0; i < maxScoreResults.size(); i++) {
-                        Document doc = maxScoreResults.poll();
-                        if (doc.getDocId() == docId) {
-                            System.out.println("MaxScore: Document " + docId + " found in position " + (i + 1));
-                            break;
-                        }
-                    }
-                    for (int i = 0; i < conjunctiveResults.size(); i++) {
-                        Document doc = conjunctiveResults.poll();
-                        if (doc.getDocId() == docId) {
-                            System.out.println("Conjunctive: Document " + docId + " found in position " + (i + 1));
-                            break;
-                        }
-                    }
-
-
+                    assert docIdInResults(daatResults, docId) : "DAAT: docId " + docId + " not in results";
+                    assert docIdInResults(maxScoreResults, docId) : "MaxScore: docId " + docId + " not in results";
+                    assert docIdInResults(conjunctiveResults, docId) : "Conjunctive: docId " + docId + " not in results";
                 }
                 //DAAT test
 
@@ -71,6 +51,15 @@ public class QueryTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean docIdInResults(PriorityQueue<Document> results, int docId) {
+        for (Document doc : results) {
+            if (doc.getDocId() == docId) {
+                return true;
+            }
+        }
+        return false;
     }
     public static void main(String[] args) throws IOException {
         Global.load();
@@ -83,5 +72,6 @@ public class QueryTest {
         docIds.add(5);
         docIds.add(6);
         QueryTest.test(docIds);
+        System.out.println("Test passed");
     }
 }
