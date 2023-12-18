@@ -18,18 +18,18 @@ import java.util.stream.Stream;
 public class preprocess {
     public static ArrayList<String> all(String text) {
         ArrayList<String> ret;
-        text=lowercase(text);
+        text = lowercase(text);
         text = text.replaceAll("https?://\\S+\\s?", " ");
         text = text.replaceAll("<[^>]*>", "");
-        text=removePuntuaction(text);
-        text=removeUnicode(text);
-        text=text.replaceAll("\\s+", " "); //remove extra whitespaces
-        ret=tokenize(text);
-        if(Global.stopWords==true){
-            ret=stopWords(ret);
+        text = removePuntuaction(text);
+        text = removeUnicode(text);
+        text = text.replaceAll("\\s+", " "); //remove extra whitespaces
+        ret = tokenize(text);
+        if (Global.stopWords) {
+            ret = stopWords(ret);
         }
-        if(Global.stem==true){
-            ret=stem(ret);
+        if (Global.stem) {
+            ret = stem(ret);
         }
         //if flag allora tokenStem else tokeniza e basta
         //return stem(text);
@@ -42,9 +42,9 @@ public class preprocess {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public static ArrayList<String> stem(ArrayList<String> tokens){
+    public static ArrayList<String> stem(ArrayList<String> tokens) {
         PorterStemmer porterStemmer = new PorterStemmer();
-        ArrayList<String> ret=new ArrayList<>();
+        ArrayList<String> ret = new ArrayList<>();
         for (String token : tokens) {
             String stem = porterStemmer.stem(token);
             //System.out.println("Token: " + token + " - Stem: " + stem);
@@ -53,21 +53,22 @@ public class preprocess {
         return ret;
     }
 
-    public static ArrayList<String> tokenize(String text){
+    public static ArrayList<String> tokenize(String text) {
 
         return Stream.of(text.toLowerCase().split(" "))
                 .collect(Collectors.toCollection(ArrayList<String>::new));
     }
-    public static String lowercase(String text){
+
+    public static String lowercase(String text) {
         return text.toLowerCase();
     }
 
-    public static String removePuntuaction(String text){
+    public static String removePuntuaction(String text) {
         String result = text.replaceAll("\\p{Punct}", " ");
         return result;
     }
 
-    public static String removeUnicode(String text){
+    public static String removeUnicode(String text) {
         String str;
         byte[] strBytes = text.getBytes(StandardCharsets.UTF_8);
 

@@ -34,7 +34,7 @@ public class MaxScore {
         Collections.sort(dictionaryElems, new Comparator<DictionaryElem>() {
             @Override
             public int compare(DictionaryElem o1, DictionaryElem o2) {
-                if(Global.isBM25 == false)
+                if (!Global.isBM25)
                     return Double.compare(o1.getMaxTFIDF(), o2.getMaxTFIDF());
                 else
                     return Double.compare(o1.getMaxBM25(), o2.getMaxBM25());
@@ -63,11 +63,11 @@ public class MaxScore {
             for (int i = pivot; i < postingLists.size(); i++) {
                 PostingList pl = postingLists.get(i);
                 Posting p = pl.getCurrent();
-                if (p!=null && p.getDocid() == currentDocId) {
+                if (p != null && p.getDocid() == currentDocId) {
                     score += calculateScore(p, dictionaryElems.get(i));
-                    p=pl.next();
+                    p = pl.next();
                 }
-                if (p!=null && p.getDocid() < next) {
+                if (p != null && p.getDocid() < next) {
                     next = p.getDocid();
                 }
 
@@ -103,8 +103,6 @@ public class MaxScore {
             }
 
             // Find the next document to process
-
-
             if (next == Global.collectionLength)
                 currentDocId = -1;
             else if (next > currentDocId)
@@ -119,7 +117,7 @@ public class MaxScore {
         double cumulativeUpperBound = 0.0;
 
         for (DictionaryElem elem : dictionaryElems) {
-            if(Global.isBM25 == false)
+            if (!Global.isBM25)
                 cumulativeUpperBound += elem.getMaxTFIDF();
             else
                 cumulativeUpperBound += elem.getMaxBM25();
@@ -146,10 +144,10 @@ public class MaxScore {
 
     private static double calculateScore(Posting posting, DictionaryElem dictionaryElem) {
 
-        if(Global.isBM25 == false)
+        if (!Global.isBM25)
             return calculateScoreStaticTFIDF(dictionaryElem.getIdf(), posting.getFrequency());
         else
-            return calculateScoreStaticBM25(dictionaryElem.getIdf(),posting.getFrequency(), docLengths.get(posting.getDocid()));
+            return calculateScoreStaticBM25(dictionaryElem.getIdf(), posting.getFrequency(), docLengths.get(posting.getDocid()));
 
     }
 }

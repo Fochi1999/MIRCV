@@ -32,51 +32,62 @@ public class SkipElem {
         this.freqBlockLen = 0;
     }
 
-    // set methods
-    public void setDocID(int docID) {
-        this.docID = docID;
+    // return the size of the skipping element
+    public static int size() {
+        return Integer.BYTES + Long.BYTES + Integer.BYTES + Long.BYTES + Integer.BYTES;
     }
 
-    public void setOffsetDoc(long offsetDoc) {
-        this.offsetDoc = offsetDoc;
+    // method that reads the skip list from the file for a posting list and returns it
+    public static ArrayList<SkipElem> readSkipList(long offset, int n) throws IOException {
+        ArrayList<SkipElem> skipElems = new ArrayList<>(n);
+        MappedByteBuffer mbbSkipping = Global.skippingChannel.map(FileChannel.MapMode.READ_ONLY, offset, (long) SkipElem.size() * n).load();
+        for (int i = 0; i < n; i++) {
+            SkipElem skipElem = new SkipElem();
+            skipElem.readFromFile(mbbSkipping);
+            skipElems.add(skipElem);
+        }
+        return skipElems;
     }
 
-    public void setDocBlockLen(int docBlockLen) {
-        this.docBlockLen = docBlockLen;
-    }
-
-    public void setOffsetFreq(long offsetFreq) {
-        this.offsetFreq = offsetFreq;
-    }
-
-    public void setFreqBlockLen(int freqBlockLen) {
-        this.freqBlockLen = freqBlockLen;
-    }
-
-    // get methods
+    // getters and setters
     public int getDocID() {
         return docID;
+    }
+
+    public void setDocID(int docID) {
+        this.docID = docID;
     }
 
     public long getOffsetDoc() {
         return offsetDoc;
     }
 
+    public void setOffsetDoc(long offsetDoc) {
+        this.offsetDoc = offsetDoc;
+    }
+
     public int getDocBlockLen() {
         return docBlockLen;
+    }
+
+    public void setDocBlockLen(int docBlockLen) {
+        this.docBlockLen = docBlockLen;
     }
 
     public long getOffsetFreq() {
         return offsetFreq;
     }
 
+    public void setOffsetFreq(long offsetFreq) {
+        this.offsetFreq = offsetFreq;
+    }
+
     public int getFreqBlockLen() {
         return freqBlockLen;
     }
 
-    // return the size of the skipping element
-    public static int size() {
-        return Integer.BYTES + Long.BYTES + Integer.BYTES + Long.BYTES + Integer.BYTES;
+    public void setFreqBlockLen(int freqBlockLen) {
+        this.freqBlockLen = freqBlockLen;
     }
 
     // write the skip element to the file using the mapped byte buffer
@@ -88,6 +99,7 @@ public class SkipElem {
         buffer.putInt(freqBlockLen);
     }
 
+    // read the skip element from the file using the mapped byte buffer
     public void readFromFile(MappedByteBuffer buffer) {
         docID = buffer.getInt();
         offsetDoc = buffer.getLong();
@@ -96,17 +108,7 @@ public class SkipElem {
         freqBlockLen = buffer.getInt();
     }
 
-    public static ArrayList<SkipElem> readSkipList(long offset, int n) throws IOException {
-        ArrayList<SkipElem> skipElems = new ArrayList<>(n);
-        MappedByteBuffer mbbSkipping = Global.skippingChannel.map(FileChannel.MapMode.READ_ONLY,offset,SkipElem.size()*n).load();
-        for (int i = 0; i < n; i++) {
-            SkipElem skipElem = new SkipElem();
-            skipElem.readFromFile(mbbSkipping);
-            skipElems.add(skipElem);
-        }
-        return skipElems;
-    }
-
+    // debug method to print the skip element
     public void printDebug() {
         System.out.printf("DocID: %d - OffsetDoc: %d - DocBlockLen: %d - OffsetFreq: %d - FreqBlockLen: %d\n",
                 docID, offsetDoc, docBlockLen, offsetFreq, freqBlockLen);

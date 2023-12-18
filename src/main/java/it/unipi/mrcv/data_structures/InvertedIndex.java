@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.List;
 
+// This class represents the inverted index
 public class InvertedIndex {
 
-    private TreeMap<String, PostingList> index;
+    private final TreeMap<String, PostingList> index;
 
     public InvertedIndex() {
         index = new TreeMap<>();
@@ -32,13 +33,8 @@ public class InvertedIndex {
         return new ArrayList<>(index.keySet());
     }
 
-    public TreeMap<String, PostingList> getTree(){
+    public TreeMap<String, PostingList> getTree() {
         return index;
-    }
-    public void writeToFile(String filename) {
-        // You can implement the file writing logic here
-        // Open the file, iterate through the index, and write it to the file
-        // You may want to use try-with-resources to handle file I/O
     }
 
     // method to clear the index

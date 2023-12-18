@@ -12,14 +12,18 @@ import java.util.List;
 import static it.unipi.mrcv.global.Global.compression;
 
 public class PostingList {
-    private String term;
+    // list of postings
     private final ArrayList<Posting> postings;
+    // list of skip elements relative to the posting list
     public ArrayList<SkipElem> skipElems = null;
+    // current block iterator
     public int currentBlock = -1;
-    public int currentPosition = -1 ;
+    // current position in the posting list
+    public int currentPosition = -1;
+    // term
+    private String term;
 
-    public static long startTime1,startTime2,startTime3, endTime1,endTime2,endTime3;
-    public static long totalTime1=0,totalTime2=0,totalTime3=0;
+    // default constructor
     public PostingList() {
         this.term = " ";
         this.postings = new ArrayList<>();
@@ -37,29 +41,31 @@ public class PostingList {
         this.postings.add(p);
     }
 
+    // constructor that takes a dictionary element as input to initialize the whole posting list (or the first block)
     public PostingList(DictionaryElem elem) throws IOException {
         this.term = elem.getTerm();
         this.postings = new ArrayList<>();
         currentPosition = 0;
-        if(compression) {
+        if (compression) {
             if (elem.getSkipLen() != 0) {
                 this.skipElems = SkipElem.readSkipList(elem.getOffsetSkip(), elem.getSkipLen());
                 loadBlock(skipElems.get(0).getOffsetDoc(),
                         skipElems.get(0).getOffsetFreq(),
                         skipElems.get(0).getDocBlockLen(),
                         skipElems.get(0).getFreqBlockLen());
-            }
-            else {
+            } else {
                 loadBlock(elem.getOffsetDoc(), elem.getOffsetFreq(), elem.getLengthDocIds(), elem.getLengthFreq());
             }
             currentBlock++;
-        }else{
+        } else {
             this.addPostings(fileUtils.readPosting(elem.getOffsetDoc(), elem.getLengthDocIds()));
         }
     }
+
     public void addPosting(Posting posting) {
         postings.add(posting);
     }
+
     public void addPostings(ArrayList<Posting> postings) {
         this.postings.addAll(postings);
     }
@@ -72,14 +78,13 @@ public class PostingList {
         return postings.size();
     }
 
-    public void setTerm(String term) {
-        this.term = term;
-    }
-
     public String getTerm() {
         return term;
     }
 
+    public void setTerm(String term) {
+        this.term = term;
+    }
 
     public void printPostingList() {
         System.out.println("Posting List:");
@@ -88,9 +93,10 @@ public class PostingList {
         }
     }
 
+    // method to load a block of the posting list given the offsets and the length
     private void loadBlock(long offsetDoc, long offsetFreq, int lengthDoc, int lenghtFreq) throws IOException {
         postings.clear();
-        if(compression) {
+        if (compression) {
 
             byte[] docsBytes = fileUtils.readCompressed(Global.docIdsChannel, offsetDoc, lengthDoc);
             byte[] freqsBytes = fileUtils.readCompressed(Global.frequenciesChannel, offsetFreq, lenghtFreq);
@@ -109,26 +115,28 @@ public class PostingList {
         }
 
     }
-    public Posting getCurrent(){
-        if(currentPosition==-1){
+
+    // method that returns the current posting of the iterator
+    public Posting getCurrent() {
+        if (currentPosition == -1) {
             return null;
         }
-        if(currentPosition < postings.size()){
+        if (currentPosition < postings.size()) {
             return postings.get(currentPosition);
-        }
-        else{
+        } else {
             return null;
         }
     }
-    public Posting next(){
-        if(currentPosition+1<postings.size()){
+
+    // method that returns the next posting of the iterator and updates the current position
+    public Posting next() {
+        if (currentPosition + 1 < postings.size()) {
             currentPosition++;
             return postings.get(currentPosition);
-        }
-        else{ //block finished
-            if(skipElems!=null){
+        } else { //block finished
+            if (skipElems != null) {
                 currentBlock++;
-                if(currentBlock<skipElems.size()){
+                if (currentBlock < skipElems.size()) {
                     currentPosition = 0;
                     try {
                         loadBlock(skipElems.get(currentBlock).getOffsetDoc(), skipElems.get(currentBlock).getOffsetFreq(), skipElems.get(currentBlock).getDocBlockLen(), skipElems.get(currentBlock).getFreqBlockLen());
@@ -136,32 +144,31 @@ public class PostingList {
                         e.printStackTrace();
                     }
                     return postings.get(currentPosition);
-                }
-                else{
-                    currentPosition=-1; //finished the pl
+                } else {
+                    currentPosition = -1; //finished the pl
                     return null;
                 }
-            }
-            else{
-                currentPosition=-1;
+            } else {
+                currentPosition = -1;
                 return null;
             }
         }
     }
 
-    // nextGEQ returns the first posting with docid greater or equal to docid
+    // nextGEQ returns the first posting with docid greater or equal to docid (if it exists)
+    // it performs binary search on the blocks and then on the postings inside the block -> O(log(sqrt(n)) * log(sqrt(n)))
     public Posting nextGEQ(int docid) {
 
         // check if the blocks are finished
-        if(skipElems != null && currentBlock >= skipElems.size()){
+        if (skipElems != null && currentBlock >= skipElems.size()) {
             return null;
         }
         // check if the posting list is empty
-        if(this.getCurrent()==null){
+        if (this.getCurrent() == null) {
             return null;
         }
         // check that the currentId is not greater than the requested one
-        if(this.getCurrent().getDocid()>=docid){
+        if (this.getCurrent().getDocid() >= docid) {
             return this.getCurrent();
         }
 
@@ -169,8 +176,8 @@ public class PostingList {
         if (skipElems != null && skipElems.get(currentBlock).getDocID() <= docid) {
 
             // check if there is not a GEQ in the posting list
-            if (skipElems.get(skipElems.size() -1).getDocID() < docid) {
-                currentPosition=-1;
+            if (skipElems.get(skipElems.size() - 1).getDocID() < docid) {
+                currentPosition = -1;
                 return null;
             }
 
@@ -180,7 +187,7 @@ public class PostingList {
             int mid;
 
             while (low < end) {
-                mid = low + ((end- low) >>> 1);
+                mid = low + ((end - low) >>> 1);
 
                 if (skipElems.get(mid).getDocID() < docid) {
                     low = mid + 1;
@@ -192,7 +199,7 @@ public class PostingList {
             if (low < skipElems.size() && skipElems.get(low).getDocID() >= docid) {
                 currentBlock = low;
             } else {
-                currentPosition=-1;
+                currentPosition = -1;
                 return null;
             }
 
@@ -229,19 +236,18 @@ public class PostingList {
             } else if (midDocId > docid) {
                 high = mid - 1;
             } else {
-                currentPosition=mid;
+                currentPosition = mid;
                 return midPosting;
             }
         }
 
         if (low < postings.size()) {
-            currentPosition=low;
+            currentPosition = low;
             return postings.get(low);
         } else {
             return null;
         }
     }
-
 
 
 }

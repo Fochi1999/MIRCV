@@ -1,5 +1,6 @@
 package it.unipi.mrcv.data_structures;
 
+// class to store the document number and the length of the document
 public class DocIndexElem {
     private String documentNumber;
     private int docLength;

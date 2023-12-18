@@ -50,7 +50,10 @@ public class SPIMI {
         // instantiate the averageDocLength
         averageDocLength = 0;
 
-        try (FileInputStream fileInputStream = new FileInputStream(path); GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream); TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream)) {
+        try (FileInputStream fileInputStream = new FileInputStream(path);
+             GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream);
+             TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream)) {
+
             TarArchiveEntry entry;
             while ((entry = tarInputStream.getNextTarEntry()) != null) {
                 // Check if the entry is the file you want to read, e.g., 'collection.tsv'

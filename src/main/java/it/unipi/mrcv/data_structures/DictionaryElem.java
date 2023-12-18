@@ -30,7 +30,7 @@ public class DictionaryElem {
     // length of the posting list
     private int lengthDocIds;
 
-  // length of the posting list (frequencies)
+    // length of the posting list (frequencies)
     private int lengthFreq;
     // max term frequency
     private int maxTF;
@@ -44,17 +44,18 @@ public class DictionaryElem {
     // inverse document frequency
     private double idf;
 
-    /* Term upper bound for TF-IDF */
+    // Term upper bound for TF-IDF
     private double maxTFIDF;
 
-    /* Term upper bound for BM25 */
+    // Term upper bound for BM25
     private double maxBM25;
 
     // default constructor
-    public DictionaryElem(){
-    };
+    public DictionaryElem() {
+    }
 
-    public DictionaryElem(String term){
+    // constructor
+    public DictionaryElem(String term) {
         this.term = term;
         this.df = 1;
         this.cf = 1;
@@ -68,64 +69,62 @@ public class DictionaryElem {
         this.idf = 0;
         this.maxTFIDF = 0;
         this.maxBM25 = 0;
-    };
+    }
 
-    // set methods
-    public void setDf(int df){
-        this.df = df;
-    };
+    // return the size of the term with only the features used in the SPIMI algorithm
+    public static int SPIMIsize() {
+        return 60;
+    }
 
-    public void setCf(int cf){
-        this.cf = cf;
-    };
+    // return the size of the whole dictionary element
+    public static int size() {
+        return 112;
+    }
 
-    public void setOffsetDoc(long offsetDoc){
-        this.offsetDoc = offsetDoc;
-    };
+    // method to read a dictionary element from disk using binary search
+    public static DictionaryElem binarySearch(String term) {
+        int step = DictionaryElem.size();
+        int firstPos = 0;
+        int currentPos;
+        int previousPos;
+        int lastPos;
+        ByteBuffer readBuffer = ByteBuffer.allocate(step);
+        DictionaryElem readElem = new DictionaryElem();
+        FileChannel vocFchan = Global.vocabularyChannel;
+        try {
+            lastPos = (int) (vocFchan.size() / step);
+            currentPos = (firstPos + lastPos) / 2;
+            do {
+                readBuffer.clear();
+                previousPos = currentPos;
+                readEntryDictionary(readBuffer, vocFchan, (long) currentPos * step, readElem);
+                if (readElem.getTerm().compareTo(term) > 0) {
+                    lastPos = currentPos;
+                } else {
+                    firstPos = currentPos;
+                }
+                currentPos = (firstPos + lastPos) / 2;
+                if (currentPos == previousPos && !readElem.getTerm().equals(term)) {
+                    throw new Exception("word doesn't exists in vocabulary");
+                }
 
-    public void setOffsetFreq(long offsetFreq){
-        this.offsetFreq = offsetFreq;
-    };
+            } while ((!readElem.getTerm().equals(term)));
 
-    public void setLengthDocIds(int lengthDocIds){
-        this.lengthDocIds = lengthDocIds;
-    };
+        } catch (Exception e) {
+            System.out.println(term + ": " + e.getMessage());
+            return null;
+        }
+        return readElem;
+    }
 
-    public void setLengthFreq(int lengthFreq){
-        this.lengthFreq = lengthFreq;
-    };
-
-    public void setTerm(String term){
-        this.term = term;
-    };
-
-    public void setMaxTF(int maxTF){
-        this.maxTF = maxTF;
-    };
-
-    public void setOffsetSkip(long offsetSkip){
-        this.offsetSkip = offsetSkip;
-    };
-
-    public void setSkipLen(int skipLen){
-        this.skipLen = skipLen;
-    };
-
+    // compute the statistics of the term
     public void setIdf() {
-        this.idf = Math.log10(collectionLength / (double)this.df);
-    }
-    public void setIdf(double idf) {
-        this.idf = idf;
+        this.idf = Math.log10(collectionLength / (double) this.df);
     }
 
-    public void setMaxTFIDF(double maxTFIDF) {
-        this.maxTFIDF = maxTFIDF;
-    }
     public void computeMaxTFIDF() {
         this.maxTFIDF = (1 + Math.log10(this.maxTF)) * this.idf;
     }
-
-    public void setMaxBM25(double maxBM25) { this.maxBM25 = maxBM25; }
 
     // function that computes max BM25 for a given term
     public void computeMaxBM25(int docLength) {
@@ -139,65 +138,113 @@ public class DictionaryElem {
         this.maxBM25 = Math.max(this.maxBM25, idf * numerator / denominator);
     }
 
-
-    // get methods
-    public String getTerm(){
+    // get and set methods
+    public String getTerm() {
         return this.term;
-    };
+    }
 
-    public int getDf(){
+    public void setTerm(String term) {
+        this.term = term;
+    }
+
+    public int getDf() {
         return this.df;
-    };
+    }
 
-    public int getCf(){
+    public void setDf(int df) {
+        this.df = df;
+    }
+
+    public int getCf() {
         return this.cf;
-    };
+    }
 
-    public long getOffsetDoc(){
+    public void setCf(int cf) {
+        this.cf = cf;
+    }
+
+    public long getOffsetDoc() {
         return this.offsetDoc;
-    };
+    }
 
-    public long getOffsetFreq(){
+    public void setOffsetDoc(long offsetDoc) {
+        this.offsetDoc = offsetDoc;
+    }
+
+    public long getOffsetFreq() {
         return this.offsetFreq;
-    };
+    }
 
-    public int getLengthDocIds(){
+    public void setOffsetFreq(long offsetFreq) {
+        this.offsetFreq = offsetFreq;
+    }
+
+    public int getLengthDocIds() {
         return this.lengthDocIds;
-    };
+    }
 
-    public int getLengthFreq(){
+    public void setLengthDocIds(int lengthDocIds) {
+        this.lengthDocIds = lengthDocIds;
+    }
+
+    public int getLengthFreq() {
         return this.lengthFreq;
-    };
+    }
 
-    public int getMaxTF(){
+    public void setLengthFreq(int lengthFreq) {
+        this.lengthFreq = lengthFreq;
+    }
+
+    public int getMaxTF() {
         return this.maxTF;
-    };
+    }
 
-    public long getOffsetSkip(){
+    public void setMaxTF(int maxTF) {
+        this.maxTF = maxTF;
+    }
+
+    public long getOffsetSkip() {
         return this.offsetSkip;
-    };
+    }
 
-    public int getSkipLen(){
+    public void setOffsetSkip(long offsetSkip) {
+        this.offsetSkip = offsetSkip;
+    }
+
+    public int getSkipLen() {
         return this.skipLen;
-    };
-
-    public double getMaxBM25() { return maxBM25; }
-
-    public double getIdf() { return idf; }
-
-    public double getMaxTFIDF() { return maxTFIDF; }
-
-    // return the size of the term with only the features used in the SPIMI algorithm
-    public static int SPIMIsize(){
-        return 60;
     }
 
-    // return the size of the whole dictionary element
-    public static int size(){
-        return 112;
+    public void setSkipLen(int skipLen) {
+        this.skipLen = skipLen;
     }
 
-    public void writeElemToDisk(MappedByteBuffer vocBuffer){
+    public double getMaxBM25() {
+        return maxBM25;
+    }
+
+    public void setMaxBM25(double maxBM25) {
+        this.maxBM25 = maxBM25;
+    }
+
+    public double getIdf() {
+        return idf;
+    }
+
+    public void setIdf(double idf) {
+        this.idf = idf;
+    }
+
+    public double getMaxTFIDF() {
+        return maxTFIDF;
+    }
+
+    public void setMaxTFIDF(double maxTFIDF) {
+        this.maxTFIDF = maxTFIDF;
+    }
+
+    // method to write a dictionary element to disk used in the merger
+    public void writeElemToDisk(MappedByteBuffer vocBuffer) {
         CharBuffer charBuffer = CharBuffer.allocate(40);
         String term = this.term;
         for (int i = 0; i < term.length() && i < 40; i++)
@@ -233,7 +280,8 @@ public class DictionaryElem {
 
     }
 
-    public void writeSPIMIElemToDisk(MappedByteBuffer vocBuffer){
+    // method to write a dictionary element to disk used in the SPIMI algorithm
+    public void writeSPIMIElemToDisk(MappedByteBuffer vocBuffer) {
         CharBuffer charBuffer = CharBuffer.allocate(40);
         String term = this.term;
         for (int i = 0; i < term.length() && i < 40; i++)
@@ -262,54 +310,20 @@ public class DictionaryElem {
 
     }
 
-    public static DictionaryElem binarySearch( String term){
-        int step = DictionaryElem.size();
-        int firstPos = 0;
-        int currentPos;
-        int previousPos;
-        int lastPos;
-        ByteBuffer readBuffer = ByteBuffer.allocate(step);
-        DictionaryElem readElem = new DictionaryElem();
-        FileChannel vocFchan = Global.vocabularyChannel;
-        try {
-            lastPos = (int) (vocFchan.size() / step);
-            currentPos = (firstPos + lastPos) / 2;
-            do {
-                readBuffer.clear();
-                previousPos = currentPos;
-                readEntryDictionary(readBuffer, vocFchan, currentPos * step, readElem);
-                if (readElem.getTerm().compareTo(term) > 0) {
-                    lastPos = currentPos;
-                } else {
-                    firstPos = currentPos;
-                }
-                currentPos = (firstPos + lastPos) / 2;
-                if (currentPos == previousPos && !readElem.getTerm().equals(term)) {
-                    throw new Exception("word doesn't exists in vocabulary");
-                }
-
-            } while ((!readElem.getTerm().equals(term)));
-
-        } catch (Exception e) {
-            System.out.println(term+": "+e.getMessage());
-            return null;
-        }
-        return readElem;
-    }
-
+    // debug print
     public void printDebug() {
         System.out.println("DEBUG:");
-        System.out.println("term: "+term);
-        System.out.println("df: "+df);
-        System.out.println("docLength: "+ lengthDocIds);
-        System.out.println("freqLength: "+lengthFreq);
-        System.out.println("offsetDoc: "+offsetDoc);
-        System.out.println("offsetFreq: "+offsetFreq);
-        System.out.println("offsetSkip: "+offsetSkip);
-        System.out.println("skipLen: "+skipLen);
-        System.out.println("maxTF: "+maxTF);
-        System.out.println("idf: "+idf);
-        System.out.println("maxTFIDF: "+maxTFIDF);
-        System.out.println("maxBM25: "+maxBM25);
+        System.out.println("term: " + term);
+        System.out.println("df: " + df);
+        System.out.println("docLength: " + lengthDocIds);
+        System.out.println("freqLength: " + lengthFreq);
+        System.out.println("offsetDoc: " + offsetDoc);
+        System.out.println("offsetFreq: " + offsetFreq);
+        System.out.println("offsetSkip: " + offsetSkip);
+        System.out.println("skipLen: " + skipLen);
+        System.out.println("maxTF: " + maxTF);
+        System.out.println("idf: " + idf);
+        System.out.println("maxTFIDF: " + maxTFIDF);
+        System.out.println("maxBM25: " + maxBM25);
     }
 }

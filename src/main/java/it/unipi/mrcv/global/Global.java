@@ -11,24 +11,29 @@ import java.util.HashSet;
 import java.util.List;
 
 public class Global {
-    public static final String prefixDocFiles="doc_";
-    public static final String prefixVocFiles="voc_";
-    public static final String prefixFreqFiles="freq_";
-    public static final String prefixDocIndex="docIndex";
-    public static final String finalVoc="vocabulary";
-    public static final String finalDoc="docIds";
-    public static final String finalFreq="frequencies";
-    public static final String skippingFile="skipping";
-    public static final String finalVocCompressed="vocabularyCompressed";
-    public static final String finalDocCompressed="docIdsCompressed";
-    public static final String finalFreqCompressed="frequenciesCompressed";
-    public static final String finalStopWordsFile="stopwords-en.txt";
-    public static final String collectionInfoFile="collectionInfo.txt";
-    public static boolean compression=true;
-    public static boolean stem=true;
-    public static boolean stopWords=true;
+    // file names
+    public static final String prefixDocFiles = "doc_";
+    public static final String prefixVocFiles = "voc_";
+    public static final String prefixFreqFiles = "freq_";
+    public static final String prefixDocIndex = "docIndex";
+    public static final String finalVoc = "vocabulary";
+    public static final String finalDoc = "docIds";
+    public static final String finalFreq = "frequencies";
+    public static final String skippingFile = "skipping";
+    public static final String finalVocCompressed = "vocabularyCompressed";
+    public static final String finalDocCompressed = "docIdsCompressed";
+    public static final String finalFreqCompressed = "frequenciesCompressed";
+    public static final String finalStopWordsFile = "stopwords-en.txt";
+    public static final String collectionInfoFile = "collectionInfo.txt";
+
+    // flags
+    public static boolean compression = true;
+    public static boolean stem = true;
+    public static boolean stopWords = true;
     public static boolean isBM25 = true;
     public static boolean indexing = false;
+
+    // global variables
     public static int collectionLength;
     public static double averageDocLength;
     public static HashSet<String> stopWordsSet;
@@ -39,10 +44,11 @@ public class Global {
     public static FileChannel frequenciesChannel;
     public static FileChannel skippingChannel;
 
+    // method to load the global variables and the initial configurations based on the launch parameters
     public static void load() {
 
 
-        if(indexing==false) {
+        if (!indexing) {
             // load collection length and average doc length
             try {
                 List<String> collectionInfo = Files.readAllLines(Paths.get("collectionInfo.txt"));
@@ -57,12 +63,11 @@ public class Global {
             //initialize the filechannels in order to not open more times than necessary
             try {
                 docIndexChannel = FileChannel.open(Paths.get(prefixDocIndex), StandardOpenOption.READ);
-                if(compression==true) {
+                if (compression) {
                     vocabularyChannel = FileChannel.open(Paths.get(finalVocCompressed), StandardOpenOption.READ);
                     docIdsChannel = FileChannel.open(Paths.get(finalDocCompressed), StandardOpenOption.READ);
                     frequenciesChannel = FileChannel.open(Paths.get(finalFreqCompressed), StandardOpenOption.READ);
-                }
-                else {
+                } else {
                     vocabularyChannel = FileChannel.open(Paths.get(finalVoc), StandardOpenOption.READ);
                     docIdsChannel = FileChannel.open(Paths.get(finalDoc), StandardOpenOption.READ);
                     frequenciesChannel = FileChannel.open(Paths.get(finalFreq), StandardOpenOption.READ);
@@ -93,7 +98,7 @@ public class Global {
             }
         }
         try {
-            if(stopWords==true) {
+            if (stopWords) {
                 List<String> stopWordsList = Files.readAllLines(Paths.get(finalStopWordsFile));
                 stopWordsSet = new HashSet<>(stopWordsList);
             }
@@ -101,8 +106,6 @@ public class Global {
             System.out.println("Can't read Stopword file, flag stopwords set to false");
             stopWords = false;
         }
-
-
 
 
     }

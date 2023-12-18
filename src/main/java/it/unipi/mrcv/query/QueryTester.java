@@ -104,7 +104,6 @@ public class QueryTester {
     }
 
 
-
     public static void main(String[] args) {
         Global.indexing = false;
         Global.load();

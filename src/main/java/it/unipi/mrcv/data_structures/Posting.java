@@ -15,8 +15,8 @@ public class Posting {
         this.frequency = frequency;
     }
 
-    // utility methods
-    public  int getDocid() {
+    // getters and setters
+    public int getDocid() {
         return docid;
     }
 
@@ -24,7 +24,7 @@ public class Posting {
         this.docid = docid;
     }
 
-    public  int getFrequency() {
+    public int getFrequency() {
         return frequency;
     }
 
@@ -32,18 +32,19 @@ public class Posting {
         this.frequency = frequency;
     }
 
+    // debug method to print the posting
     @Override
     public String toString() {
         return "Posting{docid=" + docid + ", frequency=" + frequency + '}';
     }
 
+    // method to compare two postings
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if (!(o instanceof Posting)) {
+        if (!(o instanceof Posting p)) {
             return false;
         }
-        Posting p = (Posting) o;
         return docid == p.docid &&
                 frequency == p.frequency;
     }

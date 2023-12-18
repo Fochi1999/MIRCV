@@ -14,13 +14,16 @@ import static it.unipi.mrcv.global.Global.docLengths;
 
 public class DAAT {
     public static PriorityQueue<Document> executeDAAT(ArrayList<String> queryTerms, int k) throws IOException {
+        // Priority queues for documents, one for increasing and one for decreasing order
         PriorityQueue<Document> incQueue = new PriorityQueue<>(new IncComparatorDocument());
         PriorityQueue<Document> decQueue = new PriorityQueue<>(new DecComparatorDocument());
+        // ArrayList to maintain the documents
         ArrayList<Document> documents = new ArrayList<>();
-
+        // ArrayList to maintain posting lists and dictionary elems
         ArrayList<PostingList> postingLists = new ArrayList<>();
         ArrayList<DictionaryElem> dictionaryElems = new ArrayList<>();
 
+        // load dictionary elements and posting lists
         for (String term : queryTerms) {
             DictionaryElem elem = DictionaryElem.binarySearch(term);
             if (elem != null) {
@@ -34,6 +37,7 @@ public class DAAT {
             return null;
         }
 
+        // DAAT algorithm
         while (!postingLists.isEmpty()) {
             int minDocId = Integer.MAX_VALUE;
             for (int i = 0; i < postingLists.size(); i++) {
@@ -51,13 +55,13 @@ public class DAAT {
 
                 if (p.getDocid() == minDocId) {
                     if (Global.isBM25) {
-                        d.calculateScoreBM25(dictionaryElems.get(i).getIdf(),p.getFrequency(), docLengths.get(minDocId));
+                        d.calculateScoreBM25(dictionaryElems.get(i).getIdf(), p.getFrequency(), docLengths.get(minDocId));
                     } else {
                         d.calculateScoreTFIDF(dictionaryElems.get(i).getIdf(), p.getFrequency());
                     }
 
                     // Move to next posting in the list; if the posting list is exhausted, remove it from the list
-                    if(pl.next() == null) {
+                    if (pl.next() == null) {
                         postingLists.remove(i);
                         dictionaryElems.remove(i);
                         i--; // Adjust index due to removal
@@ -66,6 +70,7 @@ public class DAAT {
                 }
             }
 
+            // update the queues
             if (!documents.contains(d)) {
                 if (documents.size() < k) {
                     documents.add(d);

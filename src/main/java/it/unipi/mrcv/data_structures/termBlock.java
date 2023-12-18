@@ -1,5 +1,6 @@
 package it.unipi.mrcv.data_structures;
 
+// class to store the term and the number of the block in which the term is stored used in the merger pqueue
 public class termBlock {
     // dictionaryElem of the term
     private final DictionaryElem term;
@@ -20,7 +21,7 @@ public class termBlock {
         term.setOffsetDoc(offsetDoc);
         term.setOffsetFreq(offsetFreq);
         term.setLengthDocIds(length);
-        this.numBlock=numBlock;
+        this.numBlock = numBlock;
     }
 
     // default constructor
@@ -29,19 +30,17 @@ public class termBlock {
         this.numBlock = 0;
     }
 
-    // set methods
+    // setters and getters
     public String getTerm() {
         return this.term.getTerm();
     }
 
-    public void setNumBlock(int numBlock) {
-        this.numBlock = numBlock;
-    }
-
-
-    // get methods
     public int getNumBlock() {
         return this.numBlock;
+    }
+
+    public void setNumBlock(int numBlock) {
+        this.numBlock = numBlock;
     }
 
     public DictionaryElem getDictionaryElem() {
@@ -57,7 +56,7 @@ public class termBlock {
         this.term.setOffsetFreq(t.getDictionaryElem().getOffsetFreq());
         this.term.setLengthDocIds(t.getDictionaryElem().getLengthDocIds());
         this.term.setLengthFreq(t.getDictionaryElem().getLengthFreq());
-        this.numBlock=t.getNumBlock();
+        this.numBlock = t.getNumBlock();
 
         this.term.setMaxTF(0);
         this.term.setOffsetSkip(0);
