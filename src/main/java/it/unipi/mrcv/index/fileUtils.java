@@ -101,7 +101,7 @@ public class fileUtils {
                 }
                 currentPos = (firstPos + lastPos) / 2;
                 if (currentPos == previousPos && !readElem.getTerm().equals(term)) {
-                    throw new Exception("word doesn't exists in vocabulary");
+                    throw new Exception(term+": word doesn't exists in vocabulary");
                 }
 
             } while ((!readElem.getTerm().equals(term)));
@@ -139,8 +139,7 @@ public class fileUtils {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return new DictionaryElem();
+            return null;
         }
         return readElem;
     }

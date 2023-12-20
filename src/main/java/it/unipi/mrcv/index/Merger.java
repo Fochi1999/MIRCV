@@ -223,7 +223,7 @@ public class Merger {
                         }
                         // create the skip element and add it to the skipList
                         SkipElem skipElem = new SkipElem();
-                        skipElem.setDocID(temporaryDocIds.get(Math.min(i + blockLength, temporaryDocIds.size() - 1)));
+                        skipElem.setDocID(temporaryDocIds.get(Math.min(i + blockLength - 1, temporaryDocIds.size() - 1)));
                         skipElem.setOffsetDoc(docOff);
                         skipElem.setOffsetFreq(freqOff);
                         skipElem.setDocBlockLen(docStep);

@@ -111,7 +111,7 @@ public class DictionaryElem {
             } while ((!readElem.getTerm().equals(term)));
 
         } catch (Exception e) {
-            System.out.println(term + ": " + e.getMessage());
+            //System.out.println(term + ": " + e.getMessage());
             return null;
         }
         return readElem;

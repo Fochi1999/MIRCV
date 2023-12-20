@@ -43,8 +43,6 @@ public class QueryTest {
                     assert docIdInResults(maxScoreResults, docId) : "MaxScore: docId " + docId + " not in results";
                     assert docIdInResults(conjunctiveResults, docId) : "Conjunctive: docId " + docId + " not in results";
                 }
-                //DAAT test
-
                 docId++;
                 line = reader.readLine();
             }
@@ -64,13 +62,10 @@ public class QueryTest {
     public static void main(String[] args) throws IOException {
         Global.load();
         ArrayList<Integer> docIds = new ArrayList<>();
-        docIds.add(0);
-        docIds.add(1);
-        docIds.add(2);
-        docIds.add(3);
-        docIds.add(4);
-        docIds.add(5);
-        docIds.add(6);
+        //add random docIds
+        for (int i = 0; i < 100; i++) {
+            docIds.add((int) (Math.random() * 100000));
+        }
         QueryTest.test(docIds);
         System.out.println("Test passed");
     }
