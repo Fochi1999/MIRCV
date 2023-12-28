@@ -56,7 +56,6 @@ public class SPIMI {
 
             TarArchiveEntry entry;
             while ((entry = tarInputStream.getNextTarEntry()) != null) {
-                // Check if the entry is the file you want to read, e.g., 'collection.tsv'
                 if (entry.getName().endsWith("collection.tsv")) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(tarInputStream, StandardCharsets.UTF_8));
                     // read the first line

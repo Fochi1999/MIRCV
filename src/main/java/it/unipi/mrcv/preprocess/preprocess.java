@@ -31,9 +31,15 @@ public class preprocess {
         if (Global.stem) {
             ret = stem(ret);
         }
-        //if flag allora tokenStem else tokeniza e basta
-        //return stem(text);
+        ret = truncate(ret);
         return ret;
+    }
+
+    private static ArrayList<String> truncate(ArrayList<String> ret) {
+        //truncate the token to max 40 characters
+        return ret.stream()
+                .map(token -> token.substring(0, Math.min(token.length(), 40)))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private static ArrayList<String> stopWords(ArrayList<String> tokens) {
