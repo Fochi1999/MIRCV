@@ -119,6 +119,7 @@ public class createCollectionTest {
             Results=ConjunctiveQuery.executeConjunctiveQuery(query, 10);
             assert Results.poll().getDocId()==i : "CONJUNCTIVE: docId " + i + " not in results";
         }
+        System.out.println("Test passed on the test collection");
 
     }
 }
