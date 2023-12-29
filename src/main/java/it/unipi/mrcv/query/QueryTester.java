@@ -109,11 +109,11 @@ public class QueryTester {
         Global.load();
 
         // uncomment to produce the results file for the TREC 2020 competition
-/*        try {
+        try {
             processQueries("msmarco-test2020-queries.tsv", "2020queryResults10.txt");
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
         // uncomment to analyze the query time for MaxScore and DAAT using the TREC 2020 queries
         try {

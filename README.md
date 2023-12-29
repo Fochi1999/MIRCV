@@ -44,3 +44,11 @@ The user has to choose several options:
     * Conjunctive
 * number of results to return: (default: 10)
 * query: (default: "")
+
+## Evaluation
+While the indexing times can always be checked after each indexing, to evaluate the relevance of the results the user needs to download a test queries file (msmarco-test2020-queries.tsv) along with the results corresponding to the same year available at: 
+https://microsoft.github.io/msmarco/TREC-Deep-Learning-2020.
+
+It is also needed to compile the trec_eval implementation avilable at: https://github.com/usnistgov/trec_eval.
+
+Once the test queries are put into the root directory of the program, the QueryTester module will automatically run every query in every mode available and return the average times, it will also produce a file called 2020queryResults10.txt which is the file to be compared with the official test results using the trec_eval program (info about the latter available on the linked repo)
